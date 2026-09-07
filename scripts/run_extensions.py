@@ -25,9 +25,12 @@ from scipy.optimize import curve_fit
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from src.units import (M_P_OVER_M_E, M_P_KG, M_E_KG, HBAR_JS, C_LIGHT, A0_M)
+from src.units import (M_P_OVER_M_E, M_P_KG, M_E_KG, HBAR_JS, C_LIGHT, A0_M,
+                       C_AU, T_AU_S)
 from src import checkerboard as cb
-from src.lattice import lattice_green_fft
+from src import hydrogen_exact as he
+from src.lattice import (lattice_green_fft, free_space_potential, grid_coords,
+                         imag_time, energy_expect)
 from src.plotting import new_fig, save
 
 OUT = ROOT / 'results' / 'extensions'
@@ -367,12 +370,110 @@ def deuterium():
     save(fig, OUT / 'ext4_deuterium.png')
 
 
+# -------------------------------------- 5) взаимодействие протона и электрона
+
+def atom_animation():
+    print('== 5. Анимация взаимодействия протона и электрона ==', flush=True)
+    N, a = 96, 0.26
+    V = free_space_potential(a, N)
+    X, Y, Z = grid_coords(a, N)
+
+    def norm(psi):
+        return psi / np.sqrt(np.sum(psi ** 2) * a ** 3)
+
+    psis, Es = [], {}
+    for name, (n, l, m) in [('1s', (1, 0, 0)), ('2p_z', (2, 1, 0))]:
+        psi = norm(he.psi_nlm_on_grid(n, l, m, X, Y, Z))
+        psi, _ = imag_time(psi, V, a, 0.004, 5000, states=psis, log_every=1000)
+        E = energy_expect(psi, V, a)
+        Es[name] = float(E)
+        psis.append(psi)
+        print(f'    {name}: E = {E:.5f}', flush=True)
+    psi1, psi2 = psis
+    E1, E2 = Es['1s'], Es['2p_z']
+    dE = E2 - E1
+    T_au = 2 * np.pi / dE
+
+    # дипольный момент: d = Σ ψ1·z·ψ2 (физическая норма), <z>(t) = d·cos(ΔE·t)
+    # на решётке a=0.26 состояние связано глубже (−0.520 против −0.5), поэтому
+    # d ≈ 0.705 вместо континуального 0.7449 (−5.4% — ошибка дискретизации)
+    d_dip = float(np.sum(psi1 * Z * psi2))
+    check('дипольная амплитуда ≈ 0.7449 a₀ ± 8% (дискретизация)', abs(abs(d_dip) - 0.7449) < 0.06,
+          float(d_dip))
+
+    nf = 40
+    ts = np.linspace(0.0, T_au, nf, endpoint=False)
+    zvals = []
+    frames = []
+    for t in ts:
+        psi = (psi1 * np.exp(-1j * E1 * t) + psi2 * np.exp(-1j * E2 * t)) / np.sqrt(2.0)
+        dens = np.abs(psi) ** 2
+        zt = float(np.sum(dens * Z))
+        zvals.append(zt)
+        fig, (ax1, ax2) = new_fig(11, 5.0, 1, 2)
+        ax1.imshow(dens[N // 2, :, :].T, origin='lower', cmap='inferno',
+                   extent=[-N * a / 2, N * a / 2, -N * a / 2, N * a / 2])
+        ax1.contour(-V[N // 2, :, :].T, levels=[0.05, 0.15, 0.4], colors='white',
+                    alpha=0.5, linewidths=0.7,
+                    extent=[-N * a / 2, N * a / 2, -N * a / 2, N * a / 2])
+        ax1.plot(0, 0, 'o', color='white', ms=8)
+        ax1.plot(0, 0, 'o', color='crimson', ms=5)
+        ax1.set_xlabel('y, a₀')
+        ax1.set_ylabel('z, a₀')
+        ax1.set_title(f'|ψ|² (плоскость x=0): t = {t:.2f} а.е.', fontsize=9)
+        zz = np.array(zvals)
+        ax2.plot(ts[:len(zz)], zz, '-', color='tab:blue')
+        ax2.plot(t, zt, 'o', color='crimson', ms=7)
+        ax2.axhline(0, color='k', ls=':', lw=0.6)
+        ax2.set_xlabel('t, а.е.')
+        ax2.set_ylabel('⟨z⟩, a₀')
+        ax2.set_title(f'Диполь: ⟨z⟩ = d·cos(ΔE·t), ΔE = {dE:.3f} (Lyman-α)')
+        buf = io.BytesIO()
+        fig.savefig(buf, format='png', dpi=100)
+        buf.seek(0)
+        frames.append(Image.open(buf).convert('RGB'))
+        plt.close(fig)
+
+    frames[0].save(OUT / 'atom_interaction.gif', save_all=True, append_images=frames[1:],
+                   duration=110, loop=0)
+    print(f'    анимация сохранена: {OUT / "atom_interaction.gif"} ({len(frames)} кадров)',
+          flush=True)
+
+    # проверки
+    check('ортонормированность базиса: 1s ⊥ 2p_z', abs(float(np.sum(psi1 * psi2))) < 1e-6,
+          float(np.sum(psi1 * psi2)))
+    psi_last = (psi1 * np.exp(-1j * E1 * ts[-1]) + psi2 * np.exp(-1j * E2 * ts[-1])) / np.sqrt(2.0)
+    check('нормировка ψ(t) сохраняется', abs(float(np.sum(np.abs(psi_last) ** 2)) - 1.0) < 1e-12,
+          float(np.sum(np.abs(psi_last) ** 2)))
+    zz = np.array(zvals)
+    # малый артефакт сворачивания хвоста 2p у границы (~0.2%) — допускаем
+    check('диполь: max|⟨z⟩| ≈ |d| (артефакт границы ≤ 0.005)',
+          abs(float(np.max(np.abs(zz))) - abs(d_dip)) < 0.005, float(np.max(np.abs(zz))))
+
+    # радиационное затухание: классическая оценка времени жизни
+    omega = dE
+    P_avg = 2.0 * omega ** 4 * d_dip ** 2 / (3.0 * C_AU ** 3)   # а.е. мощности
+    tau_rad = omega / P_avg                                    # а.е. времени
+    report['atom'] = {'a': a, 'N': N, 'E1s': E1, 'E2p': E2, 'dE': dE,
+                      'T_au': float(T_au), 'T_fs': float(T_au * T_AU_S * 1e15),
+                      'dipole': float(d_dip), 'P_avg_au': float(P_avg),
+                      'tau_rad_au': float(tau_rad), 'tau_rad_ns': float(tau_rad * T_AU_S * 1e9),
+                      'tau_rad_periods': float(tau_rad / T_au)}
+    print(f'    ΔE = {dE:.4f} (эталон 0.375), период {T_au:.2f} а.е. = '
+          f'{T_au*T_AU_S*1e15:.2f} фс; диполь d = {d_dip:.4f} a₀; τ_рад ≈ '
+          f'{tau_rad*T_AU_S*1e9:.2f} нс (измеренное 1.6 нс)', flush=True)
+    check('частота диполя ≈ Lyman-α ± 6%', abs(dE - 0.375) < 0.023, float(dE))
+    check('радиационное время жизни ~ нс (порядок величины)', 0.5 < tau_rad * T_AU_S * 1e9 < 10,
+          float(tau_rad * T_AU_S * 1e9))
+
+
 def main():
     print('=== РАСШИРЕНИЕ: правило материи, нейтрино, структуры, протон ===', flush=True)
     checkerboard()
     proton_animation()
     structure_numbers()
     deuterium()
+    atom_animation()
     report['checks'] = checks
     (OUT / 'report.json').write_text(json.dumps(report, indent=2, ensure_ascii=False),
                                      encoding='utf-8')
