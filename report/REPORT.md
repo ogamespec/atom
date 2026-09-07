@@ -814,11 +814,15 @@ src/hydrogen_exact.py      — аналитика: E_n, R_nl, Y_lm, φ(p), ср�
 src/radial.py              — радиальная диагонализация (общая для обеих моделей)
 src/lattice.py             — решётка: лапласиан, функция Грина, точные s-оболочки,
                              мнимое время, расщепление, квантизация битов
+src/checkerboard.py        — правило материи (шахматная доска Фейнмана)
 src/plotting.py            — помощники matplotlib
 scripts/run_baseline.py    — эталон: аналитика + численные проверки + рисунки
 scripts/run_model.py       — вычислительная модель: все эксперименты + рисунки
-results/baseline/*.png,json, results/model/*.png,json
+scripts/run_extensions.py  — расширение: правило материи, нейтрино, структуры,
+                             нуклеосинтез дейтерия, анимация протона
+results/baseline/*.png,json, results/model/*.png,json, results/extensions/*
 report/REPORT.md           — этот отчёт
+report/REPORT_EXTENSION.md — отчёт №2: расширение исследования
 ```
 
 Запуск: `python scripts/run_baseline.py`; `python scripts/run_model.py`
