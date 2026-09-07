@@ -443,4 +443,8 @@ results/extensions/neutrino_oscillation.gif    — анимация осцилл
 results/extensions/report.json                 — все числа
 ```
 
+Словарь «небытовых» понятий с анимациями — в отдельном документе
+`GLOSSARY.md` (термины простыми словами + 9 анимаций/схем).
+```
+
 Запуск: `python scripts/run_extensions.py` (~1 минута).

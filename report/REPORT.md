@@ -823,6 +823,7 @@ scripts/run_extensions.py  — расширение: правило матери
 results/baseline/*.png,json, results/model/*.png,json, results/extensions/*
 report/REPORT.md           — этот отчёт
 report/REPORT_EXTENSION.md — отчёт №2: расширение исследования
+report/GLOSSARY.md         — словарь понятий с анимациями (визуальный гид)
 ```
 
 Запуск: `python scripts/run_baseline.py`; `python scripts/run_model.py`
