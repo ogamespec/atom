@@ -467,6 +467,206 @@ def atom_animation():
           float(tau_rad * T_AU_S * 1e9))
 
 
+# -------------------------------------------- 6) осцилляции нейтрино в модели
+
+def neutrino_oscillation():
+    print('== 6. Осцилляции нейтрино в клеточной модели ==', flush=True)
+    # --- реальные параметры (PDG/NOvA) ---
+    th12, th23, th13 = np.radians(33.41), np.radians(49.1), np.radians(8.57)
+    delta = np.radians(195.0)
+    c12, s12 = np.cos(th12), np.sin(th12)
+    c23, s23 = np.cos(th23), np.sin(th23)
+    c13, s13 = np.cos(th13), np.sin(th13)
+    U = np.array([
+        [c12 * c13, s12 * c13, s13 * np.exp(-1j * delta)],
+        [-s12 * c23 - c12 * s23 * s13 * np.exp(1j * delta),
+         c12 * c23 - s12 * s23 * s13 * np.exp(1j * delta), s23 * c13],
+        [s12 * s23 - c12 * c23 * s13 * np.exp(1j * delta),
+         -c12 * s23 - s12 * c23 * s13 * np.exp(1j * delta), c23 * c13],
+    ])
+    dms21_r, dms31_r = 7.42e-5, 2.51e-3          # эВ² (реальные)
+    L_atm_km = 2.48 * 1.0 / dms31_r              # 4πħc·E/Δm² при E = 1 МэВ
+    L_sol_km = 2.48 * 1.0 / dms21_r
+    m_nu = 0.05                                   # эВ (шкала)
+    a_nu_m = 1.973269804e-13 / (2.0 * m_nu * 1e-6)   # λ̄_ν/2 = ħc/(2m_νc²), м
+    cells_per_osc = L_atm_km * 1e3 / a_nu_m
+
+    # --- клеточная модель: 3 массовых канала квантовой прогулки ---
+    eps, N = 0.05, 8192
+    pbar, sig = 10.0, 2.0
+    m1, m2 = 0.0, 0.3                            # Δm²₂₁ = 0.09
+    m3 = np.sqrt(m1 ** 2 + (m2 ** 2 - m1 ** 2) * (dms31_r / dms21_r))  # реальное отношение 33.8
+    w1 = cb.dispersion(eps, m1, pbar)
+    w2 = cb.dispersion(eps, m2, pbar)
+    w3 = cb.dispersion(eps, m3, pbar)
+    dw21, dw31 = w2 - w1, w3 - w1
+    # групповые скорости (численно) — для гауссова перекрытия разделяющихся мод
+    dk = 0.002
+    v1 = (cb.dispersion(eps, m1, pbar + dk) - cb.dispersion(eps, m1, pbar - dk)) / (2 * dk)
+    v2 = (cb.dispersion(eps, m2, pbar + dk) - cb.dispersion(eps, m2, pbar - dk)) / (2 * dk)
+    v3 = (cb.dispersion(eps, m3, pbar + dk) - cb.dispersion(eps, m3, pbar - dk)) / (2 * dk)
+    x = np.arange(N)
+    x0 = 400
+    # гауссов пакет с импульсом p̄ (ультрарелятивистский пучок);
+    # положительно-энергетические спиноры u_i(p̄) — чистые правые движители
+    g = np.exp(-(x - x0) ** 2 / (2 * (sig / eps) ** 2)) * np.exp(1j * pbar * eps * x)
+    E_i = [np.sqrt(pbar ** 2 + mi ** 2) for mi in (m1, m2, m3)]
+    AR = [np.sqrt((E + pbar) / (2 * E)) for E in E_i]
+    AL = [np.sqrt((E - pbar) / (2 * E)) for E in E_i]
+    Fij = [[AR[i] * AR[j] + AL[i] * AL[j] for j in range(3)] for i in range(3)]
+    psiR = [np.conj(U[0, i]) * AR[i] * g.astype(complex) for i in range(3)]
+    psiL = [np.conj(U[0, i]) * AL[i] * g.astype(complex) for i in range(3)]
+
+    T = 5000
+    rec_t, rec_P = [], []
+    frames = []
+    ts_an = np.linspace(0, T * eps, 600)
+
+    def G_ij(dv, t):
+        return np.exp(-(dv * t) ** 2 / (4.0 * sig ** 2))
+
+    Pee_an = 1.0 \
+        - 4 * np.abs(U[0, 0]) ** 2 * np.abs(U[0, 1]) ** 2 * Fij[0][1] * G_ij(v2 - v1, ts_an) * np.sin(0.5 * dw21 * ts_an) ** 2 \
+        - 4 * np.abs(U[0, 0]) ** 2 * np.abs(U[0, 2]) ** 2 * Fij[0][2] * G_ij(v3 - v1, ts_an) * np.sin(0.5 * dw31 * ts_an) ** 2 \
+        - 4 * np.abs(U[0, 1]) ** 2 * np.abs(U[0, 2]) ** 2 * Fij[1][2] * G_ij(v3 - v2, ts_an) * np.sin(0.5 * (dw31 - dw21) * ts_an) ** 2
+    for t in range(1, T + 1):
+        for i in range(3):
+            psiR[i], psiL[i] = cb.step(psiR[i], psiL[i], eps,
+                                       m1 + (m2 - m1) * (i == 1) + (m3 - m1) * (i == 2))
+        if t % 5 == 0:
+            rho = np.zeros((3, N))
+            for a in range(3):
+                nuR = sum(U[a, i] * psiR[i] for i in range(3))
+                nuL = sum(U[a, i] * psiL[i] for i in range(3))
+                rho[a] = np.abs(nuR) ** 2 + np.abs(nuL) ** 2
+            tot = rho.sum(axis=0).sum()
+            rec_t.append(t * eps)
+            rec_P.append(rho.sum(axis=1) / tot)
+        if t % 100 == 0:
+            rho = np.zeros((3, N))
+            for a in range(3):
+                nuR = sum(U[a, i] * psiR[i] for i in range(3))
+                nuL = sum(U[a, i] * psiL[i] for i in range(3))
+                rho[a] = np.abs(nuR) ** 2 + np.abs(nuL) ** 2
+            fig, (ax1, ax2) = new_fig(12, 5.0, 1, 2)
+            xx = eps * x
+            totc = rho.sum(axis=0)
+            ax1.plot(xx, rho[0] / totc.max(), color='crimson', lw=1.4, label='ν_e')
+            ax1.plot(xx, rho[1] / totc.max(), color='forestgreen', lw=1.4, label='ν_μ')
+            ax1.plot(xx, rho[2] / totc.max(), color='royalblue', lw=1.4, label='ν_τ')
+            ax1.plot(xx, totc / totc.max(), 'k--', lw=0.8, label='полный поток')
+            ax1.set_xlim(eps * x0 - 2, eps * x0 + 280)
+            ax1.set_ylim(0, 1.05)
+            ax1.set_xlabel('x (c=1)')
+            ax1.set_ylabel('плотность аромата')
+            ax1.set_title(f'Пучок нейтрино: L = {t*eps:.0f} (такт {t})', fontsize=9)
+            ax1.legend(fontsize=7, ncol=2)
+            rt = np.array(rec_t)
+            rp = np.array(rec_P)
+            for a, (lab, col) in enumerate([('P_ee', 'crimson'), ('P_eμ', 'forestgreen'),
+                                            ('P_eτ', 'royalblue')]):
+                ax2.plot(rt, rp[:, a], color=col, lw=1.2, label=lab)
+            ax2.plot(ts_an, Pee_an, 'k--', lw=0.9, label='аналитика 3-аромата')
+            ax2.axvline(t * eps, color='gray', lw=0.8)
+            ax2.set_xlabel('L = t (c=1)')
+            ax2.set_ylabel('вероятность')
+            ax2.set_title('Осцилляции ν_e → ν_α (модель vs аналитика)')
+            ax2.legend(fontsize=7)
+            buf = io.BytesIO()
+            fig.savefig(buf, format='png', dpi=100)
+            buf.seek(0)
+            frames.append(Image.open(buf).convert('RGB'))
+            plt.close(fig)
+
+    frames[0].save(OUT / 'neutrino_oscillation.gif', save_all=True,
+                   append_images=frames[1:], duration=110, loop=0)
+    print(f'    анимация сохранена: {OUT / "neutrino_oscillation.gif"} ({len(frames)} кадров)',
+          flush=True)
+
+    rt = np.array(rec_t)
+    rp = np.array(rec_P)
+    # --- проверки ---
+    check('сохранение вероятности Σ_α P_eα = 1',
+          np.max(np.abs(rp.sum(axis=1) - 1.0)) < 1e-12,
+          float(np.max(np.abs(rp.sum(axis=1) - 1.0))))
+    # аналитика с точными дисперсионными частотами, спинорами и перекрытием мод
+    mask = rt < 60
+    Pee_num = rp[mask, 0]
+    Pee_an_m = 1.0 \
+        - 4 * np.abs(U[0, 0]) ** 2 * np.abs(U[0, 1]) ** 2 * Fij[0][1] * G_ij(v2 - v1, rt[mask]) * np.sin(0.5 * dw21 * rt[mask]) ** 2 \
+        - 4 * np.abs(U[0, 0]) ** 2 * np.abs(U[0, 2]) ** 2 * Fij[0][2] * G_ij(v3 - v1, rt[mask]) * np.sin(0.5 * dw31 * rt[mask]) ** 2 \
+        - 4 * np.abs(U[0, 1]) ** 2 * np.abs(U[0, 2]) ** 2 * Fij[1][2] * G_ij(v3 - v2, rt[mask]) * np.sin(0.5 * (dw31 - dw21) * rt[mask]) ** 2
+    dev_an = np.max(np.abs(Pee_num - Pee_an_m))
+    check('P_ee(модель) = аналитика 3-ароматов (±2%)', dev_an < 0.02, float(dev_an))
+    # FFT быстрой (атмосферной) компоненты: вычитаем медленную солнечную
+    y = rp[:, 0]
+    ys = np.convolve(y, np.ones(40) / 40.0, mode='same')
+    yf = y - ys
+    yf_win = yf * np.hanning(len(yf))
+    yz = np.concatenate([yf_win, np.zeros(15 * len(yf_win))])
+    f = np.fft.rfftfreq(len(yz), d=rt[1] - rt[0])
+    spec = np.abs(np.fft.rfft(yz))
+    f_peak = f[np.argmax(spec)]
+    check('частота осцилляций = Δω₃₁/(2π) (дисперсия КА)',
+          abs(2 * np.pi * f_peak - dw31) < 0.005, float(2 * np.pi * f_peak))
+    # декогеренция: разделение массовых мод на решётке (амплитуда быстрой компоненты)
+    dv31 = dw31 / pbar                      # разность групповых скоростей ≈ Δm²/(2p̄²)
+    L_coh = sig / dv31                      # длина когерентности
+    def local_amp(t0, half=7.5):
+        m = np.abs(rt - t0) < half
+        return float(yf[m].std())
+    amp_early = local_amp(15.0)
+    amp_late = local_amp(215.0)
+    check('декогеренция: амплитуда падает (разделение мод)', amp_late < 0.6 * amp_early,
+          (float(amp_early), float(amp_late)))
+    report['neutrino'] = {
+        'masses_walker': [m1, m2, float(m3)], 'pbar': pbar, 'sig': sig,
+        'dms_ratio': float((m3 ** 2 - m1 ** 2) / (m2 ** 2 - m1 ** 2)),
+        'dw21': float(dw21), 'dw31': float(dw31),
+        'dev_analytic': float(dev_an), 'f_peak': float(2 * np.pi * f_peak),
+        'L_coh': float(L_coh), 'L_coh_cells': float(L_coh / eps),
+        'L_atm_km_real': float(L_atm_km), 'L_sol_km_real': float(L_sol_km),
+        'a_nu_m': float(a_nu_m), 'cells_per_osc': float(cells_per_osc),
+        'U': [[[float(z.real), float(z.imag)] for z in row] for row in U],
+    }
+    print(f'    Δω₃₁ = {dw31:.4f} (FFT: {2*np.pi*f_peak:.4f}), Δω₂₁ = {dw21:.4f}; '
+          f'L_coh = {L_coh:.0f} = {L_coh/eps:.0f} ячеек; L_атм(1 МэВ) = {L_atm_km:.0f} км = '
+          f'{cells_per_osc:.1e} ячеек (a_ν = {a_nu_m*1e6:.2f} мкм)', flush=True)
+
+    # --- итоговый рисунок ---
+    fig, axes = new_fig(12, 9, 2, 2)
+    axes[0][0].plot(rt, rp[:, 0], color='crimson', label='модель')
+    axes[0][0].plot(ts_an, Pee_an, 'k--', lw=1, label='аналитика')
+    axes[0][0].set_xlabel('L = t (c=1)')
+    axes[0][0].set_ylabel('P_ee')
+    axes[0][0].set_title('Выживание ν_e (быстрая атмосферная осцилляция)')
+    axes[0][0].legend(fontsize=8)
+    axes[0][1].plot(2 * np.pi * f, spec)
+    axes[0][1].axvline(dw31, color='r', ls='--', label=f'Δω₃₁ = {dw31:.4f}')
+    axes[0][1].set_xlim(0, 0.6)
+    axes[0][1].set_xlabel('частота ω')
+    axes[0][1].set_ylabel('|БПФ(P_ee)|')
+    axes[0][1].set_title('Спектр осцилляций: пик на Δω₃₁')
+    axes[0][1].legend(fontsize=8)
+    axes[1][0].plot(rt, rp[:, 1], color='forestgreen', label='P_eμ')
+    axes[1][0].plot(rt, rp[:, 2], color='royalblue', label='P_eτ')
+    axes[1][0].set_xlabel('L = t')
+    axes[1][0].set_ylabel('вероятность')
+    axes[1][0].set_title('Появление ν_μ, ν_τ (медленная солнечная модуляция)')
+    axes[1][0].legend(fontsize=8)
+    axes[1][1].text(0.05, 0.9, 'Параметры модели', fontsize=10, transform=axes[1][1].transAxes)
+    txt = (f'm₁, m₂, m₃ = {m1}, {m2}, {m3:.3f}\n'
+           f'Δm²₃₁/Δm²₂₁ = {(m3**2-m1**2)/(m2**2-m1**2):.1f} (реальное 33.8)\n'
+           f'L_osc(атм, 1 МэВ) = {L_atm_km:.0f} км\n'
+           f'L_osc(солн, 1 МэВ) = {L_sol_km:.0f} км\n'
+           f'a_ν = λ̄_ν/2 = {a_nu_m*1e6:.2f} мкм\n'
+           f'ячеек на осцилляцию = {cells_per_osc:.1e}\n'
+           f'декогеренция: L_coh = {L_coh/eps:.0f} ячеек')
+    axes[1][1].text(0.05, 0.5, txt, fontsize=9, transform=axes[1][1].transAxes)
+    axes[1][1].axis('off')
+    save(fig, OUT / 'ext5_neutrino.png')
+
+
 def main():
     print('=== РАСШИРЕНИЕ: правило материи, нейтрино, структуры, протон ===', flush=True)
     checkerboard()
@@ -474,6 +674,7 @@ def main():
     structure_numbers()
     deuterium()
     atom_animation()
+    neutrino_oscillation()
     report['checks'] = checks
     (OUT / 'report.json').write_text(json.dumps(report, indent=2, ensure_ascii=False),
                                      encoding='utf-8')
