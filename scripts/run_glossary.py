@@ -16,6 +16,11 @@ import json
 import sys
 from pathlib import Path
 
+# Устойчивость к кодировке консоли Windows: cp1251 не умеет α, π, ≈, √, ².
+if hasattr(sys.stdout, 'reconfigure'):
+    sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+    sys.stderr.reconfigure(encoding='utf-8', errors='replace')
+
 import numpy as np
 import matplotlib.pyplot as plt
 from PIL import Image

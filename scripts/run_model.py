@@ -19,6 +19,11 @@ import sys
 import warnings
 from pathlib import Path
 
+# Устойчивость к кодировке консоли Windows: cp1251 не умеет α, π, ≈, √, ².
+if hasattr(sys.stdout, 'reconfigure'):
+    sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+    sys.stderr.reconfigure(encoding='utf-8', errors='replace')
+
 import numpy as np
 from scipy import sparse
 from scipy.optimize import curve_fit
@@ -480,9 +485,10 @@ def bitdepth():
     slope_hi = np.polyfit([B for B in B_list if B >= 8],
                           np.log10(np.abs([errs[B]['err'] for B in B_list if B >= 8])), 1)[0]
     B_est = float(np.ceil(-3.0 / slope_hi))
+    B_min = next((B for B in B_list if abs(errs[B]['err']) < 1e-3), None)
     report['B_min_1e-3'] = B_min
     report['B_est_1e-3'] = B_est
-    print(f'    минимальная глубина для ошибки < 1e-3: B = {B_min} '
+    print(f'    минимальная измеренная глубина с ошибкой < 1e-3: B = {B_min} '
           f'(оценка по наклону B≥8: {B_est:.0f} бит)', flush=True)
     check('ошибка B=16 < ошибки B=5', abs(errs[16]['err']) < abs(errs[5]['err']),
           float(errs[16]['err']))

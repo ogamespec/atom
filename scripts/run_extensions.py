@@ -17,6 +17,11 @@ import json
 import sys
 from pathlib import Path
 
+# Устойчивость к кодировке консоли Windows: cp1251 не умеет α, π, ≈, √, ².
+if hasattr(sys.stdout, 'reconfigure'):
+    sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+    sys.stderr.reconfigure(encoding='utf-8', errors='replace')
+
 import numpy as np
 import matplotlib.pyplot as plt
 from PIL import Image
@@ -485,8 +490,10 @@ def neutrino_oscillation():
          -c12 * s23 - s12 * c23 * s13 * np.exp(1j * delta), c23 * c13],
     ])
     dms21_r, dms31_r = 7.42e-5, 2.51e-3          # эВ² (реальные)
-    L_atm_km = 2.48 * 1.0 / dms31_r              # 4πħc·E/Δm² при E = 1 МэВ
-    L_sol_km = 2.48 * 1.0 / dms21_r
+    E_nu_MeV = 1.0                               # энергия пучка для реальных длин
+    # L_osc = 4πħc·E/Δm² = 2.48 км·(E/ГэВ)/Δm²[эВ²]; при E = 1 МэВ → метры
+    L_atm_km = 2.48e-3 * E_nu_MeV / dms31_r
+    L_sol_km = 2.48e-3 * E_nu_MeV / dms21_r
     m_nu = 0.05                                   # эВ (шкала)
     a_nu_m = 1.973269804e-13 / (2.0 * m_nu * 1e-6)   # λ̄_ν/2 = ħc/(2m_νc²), м
     cells_per_osc = L_atm_km * 1e3 / a_nu_m
@@ -630,8 +637,9 @@ def neutrino_oscillation():
         'U': [[[float(z.real), float(z.imag)] for z in row] for row in U],
     }
     print(f'    Δω₃₁ = {dw31:.4f} (FFT: {2*np.pi*f_peak:.4f}), Δω₂₁ = {dw21:.4f}; '
-          f'L_coh = {L_coh:.0f} = {L_coh/eps:.0f} ячеек; L_атм(1 МэВ) = {L_atm_km:.0f} км = '
-          f'{cells_per_osc:.1e} ячеек (a_ν = {a_nu_m*1e6:.2f} мкм)', flush=True)
+          f'L_coh = {L_coh:.0f} = {L_coh/eps:.0f} ячеек; L_атм(1 МэВ) = {L_atm_km*1e3:.0f} м, '
+          f'L_солн(1 МэВ) = {L_sol_km:.1f} км; ячеек на осцилляцию = {cells_per_osc:.1e} '
+          f'(a_ν = {a_nu_m*1e6:.2f} мкм)', flush=True)
 
     # --- итоговый рисунок ---
     fig, axes = new_fig(12, 9, 2, 2)
@@ -657,8 +665,8 @@ def neutrino_oscillation():
     axes[1][1].text(0.05, 0.9, 'Параметры модели', fontsize=10, transform=axes[1][1].transAxes)
     txt = (f'm₁, m₂, m₃ = {m1}, {m2}, {m3:.3f}\n'
            f'Δm²₃₁/Δm²₂₁ = {(m3**2-m1**2)/(m2**2-m1**2):.1f} (реальное 33.8)\n'
-           f'L_osc(атм, 1 МэВ) = {L_atm_km:.0f} км\n'
-           f'L_osc(солн, 1 МэВ) = {L_sol_km:.0f} км\n'
+           f'L_osc(атм, 1 МэВ) = {L_atm_km*1e3:.0f} м = {L_atm_km:.3f} км\n'
+           f'L_osc(солн, 1 МэВ) = {L_sol_km:.1f} км\n'
            f'a_ν = λ̄_ν/2 = {a_nu_m*1e6:.2f} мкм\n'
            f'ячеек на осцилляцию = {cells_per_osc:.1e}\n'
            f'декогеренция: L_coh = {L_coh/eps:.0f} ячеек')
