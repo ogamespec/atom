@@ -294,7 +294,7 @@ def render_voxels(g: np.ndarray, size: int = 640, canvas_L: int | None = None,
                   cmap: str = CMAP, label: str | None = None,
                   value_norm: float | None = None, front_radius: float | None = None,
                   front_time: float | None = None, legend_label: str | None = None,
-                  inset: bool = False) -> np.ndarray:
+                  inset: bool = False, front_label: str = 'фронт c·t') -> np.ndarray:
     """Перспективный рендер занятых ячеек как отдельных вокселей.
 
     В отличие от объёмного рендера, здесь видна решётка: каждая ячейка —
@@ -447,7 +447,7 @@ def render_voxels(g: np.ndarray, size: int = 640, canvas_L: int | None = None,
     if label:
         dr.text((14, 12), label, fill=(230, 240, 250), font=font)
         if front_time and front_time > 0:
-            fr = f'фронт c·t = {front_time:.0f}'
+            fr = f'{front_label} = {front_time:.0f}'
             if front_time >= canvas_L / 2:
                 fr += '  (дошёл до стенки)'
             dr.text((14, 54), fr, fill=(120, 195, 245), font=font_s)

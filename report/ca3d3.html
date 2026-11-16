@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Биты не рождаются: консервативный автомат из зародыша — часть 3</title>
+<style>
+:root{--bg:#070a10;--ink:#dce6f4;--muted:#8ea2bd;--acc:#ffb454;--acc2:#7cc4ff;--line:#1d2a3b;--mono:"SFMono-Regular",Consolas,monospace}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(1000px 500px at 15% -10%,#1a2436,transparent 60%),var(--bg);color:var(--ink);font:16px/1.65 "Inter","Segoe UI",Arial,sans-serif}
+a{color:var(--acc2);text-decoration:none}a:hover{text-decoration:underline}
+.wrap{max-width:1120px;margin:0 auto;padding:0 26px 80px}
+header{padding:56px 0 26px;border-bottom:1px solid var(--line);margin-bottom:30px}
+.kicker{color:var(--acc);font-size:12.5px;letter-spacing:.18em;text-transform:uppercase;font-weight:700}
+h1{font-size:clamp(30px,4.2vw,52px);line-height:1.1;margin:.3em 0 .25em;letter-spacing:-.02em}
+h1 .thin{color:var(--muted);font-weight:400}
+.lead{font-size:18px;color:#b9c7da;max-width:900px}
+.badges{display:flex;flex-wrap:wrap;gap:8px;margin-top:20px}
+.badge{font:12px var(--mono);padding:8px 11px;border:1px solid var(--line);border-radius:999px;color:var(--muted);background:#0b1119}.badge b{color:var(--ink)}
+section{margin:0 0 46px}
+h2{font-size:27px;margin:0 0 12px;display:flex;gap:12px;align-items:baseline}
+h2 .num{font:12.5px var(--mono);color:var(--acc);border:1px solid #3a2a17;background:#1a1208;padding:4px 8px;border-radius:6px}
+h3{font-size:19px;margin:26px 0 8px}
+p{margin:0 0 14px}ul,ol{padding-left:24px;margin:0 0 16px}li{margin:5px 0}
+.muted{color:var(--muted)}.small{font-size:13.5px}
+code{font-family:var(--mono);font-size:.9em;background:#101a27;border:1px solid var(--line);border-radius:5px;padding:2px 5px;color:#ffd9a3}
+.formula{font-family:var(--mono);font-size:14px;background:#0b121c;border:1px solid var(--line);border-left:3px solid var(--acc);border-radius:8px;padding:12px 14px;margin:12px 0 18px;overflow-x:auto}
+.note{background:#0d1622;border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin:18px 0;color:#c3d1e3}.note b{color:var(--acc)}
+figure{margin:22px 0;background:#0a1018;border:1px solid var(--line);border-radius:12px;padding:10px}
+figure img{width:100%;height:auto;border-radius:7px;background:#000;display:block}
+figcaption{font-size:13.5px;color:var(--muted);padding:9px 6px 2px}figcaption b{color:#d6e3f4}
+.tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:10px;margin:14px 0 20px;background:#0a1018}
+table{border-collapse:collapse;width:100%;font-size:13px}
+th,td{padding:8px 10px;border-bottom:1px solid #16202d;text-align:left;vertical-align:top}
+th{background:#101927;color:#9fb3cc;font-size:11.5px;text-transform:uppercase;letter-spacing:.03em;white-space:nowrap}
+tr:last-child td{border-bottom:none}tbody tr:hover{background:#0f1824}
+td.num,th.num{text-align:right;font-family:var(--mono);font-size:12px;white-space:nowrap}
+.tag{font:11.5px var(--mono);padding:4px 7px;border-radius:5px;border:1px solid var(--line);color:#a9bcd4;background:#0d1521}
+.tag.ok{color:#9ff0c5;border-color:#1d3b2e;background:#0a1a13}.tag.no{color:#ffb3b3;border-color:#3b1d1d;background:#1a0d0d}
+.gallery{display:grid;grid-template-columns:repeat(auto-fit,minmax(330px,1fr));gap:16px}
+.gallery figure{margin:0}
+.legendgrid{display:flex;flex-wrap:wrap;gap:24px;margin:14px 0 18px;padding:13px 16px;border:1px solid var(--line);border-radius:10px;background:#0a1018;font-size:12.5px;color:#b9c9dd}
+.bar{width:160px;height:12px;border-radius:6px;border:1px solid #2a3a4e;margin-bottom:6px}
+.bar.inf{background:linear-gradient(90deg,#000004,#420a68,#932667,#dd513a,#fca50a,#fcffa4)}
+.frontline{display:inline-block;width:36px;height:2px;background:#5ac3ff;vertical-align:middle;margin-right:8px}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:6px 16px;font-size:13.5px}.kv div:nth-child(odd){color:var(--muted)}
+footer{border-top:1px solid var(--line);padding-top:20px;color:var(--muted);font-size:13px;margin-top:40px}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <div class="kicker">ogamespec/atom · issue #1 · часть 3</div>
+  <h1>Биты не рождаются<br><span class="thin">консервативный автомат из зародыша</span></h1>
+  <p class="lead">Третья часть построена по исправленной модели: в клетке 64 бита, зародыш несёт <b>216 000 единичных бит</b>, и все они только <b>переходят</b> в соседние клетки. Ни одна единица не появляется из ничего и не исчезает. Пустые клетки пропускаются — симуляция идёт от зародыша, а не «по всей решётке сразу».</p>
+  <div class="badges">
+    <span class="badge">бит в зародыше: <b>216 000</b></span>
+    <span class="badge">правил: <b>12</b></span>
+    <span class="badge">сохранение popcount: <b>точно</b></span>
+    <span class="badge">проверок: <b>6</b></span>
+  </div>
+</header>
+
+<section>
+<h2><span class="num">01</span> Что исправлено</h2>
+<p>В первых двух частях были правила, где клетки «рождались», делились и умирали. Для этой модели так нельзя: информация не берётся из ничего. Здесь единственная операция — <b>перенос бит</b>:</p>
+<ul>
+  <li>клетка хранит <b>B = 64 бита</b>;</li>
+  <li>шесть каналов по <b>10 бит</b> уходят к шести соседям, <b>4 бита</b> остаются в клетке;</li>
+  <li>перед переносом клетка переставляет свои биты (поворот или перестановка байтов) — это меняет, какой канал куда пойдёт;</li>
+  <li>глобальная сумма <code>popcount</code> постоянна: <b>216 000 → 216 000</b> во всех 12 прогонах;</li>
+  <li>клетки с нулём бит не обрабатываются: активных клеток не больше 0.8% объёма.</li>
+</ul>
+<div class="formula">каналы: d=0..5 → +x,−x,+y,−y,+z,−z;  биты 60..63 → остаются<br>
+s'(x) = OR<sub>d</sub> shift<sub>d</sub>( block<sub>d</sub>( P(s(x)) ) )</div>
+<p><b>Причинность.</b> Бит за такт переходит не более чем на одну клетку, поэтому фронт не может обогнать <code>c·t + r₀</code>, где <code>r₀</code> — радиус зародыша. Проверено численно для всех правил.</p>
+<div class="note"><b>Почему структуры разреженные.</b> Если биты не рождаются, их конечное число (216 000) размазывается по растущему объёму. Плотных блобов, как в части 2, здесь быть не может — это честное следствие сохранения. Зато видно, как разные правила превращают один и тот же зародыш в лучи, облако или клубок.</div>
+</section>
+
+<section>
+<h2><span class="num">02</span> Двенадцать правил</h2>
+<p>Меняются три вещи: поворот битов перед переносом, перестановка байтов и поле направлений (сдвиг канала на <code>x+y+z</code>). Зародыш один и тот же: 15³ клеток по 64 бита.</p>
+<div class="tablewrap"><table><thead><tr><th>ID</th><th>правило</th><th class="num">rot</th><th>perm</th><th class="num">field</th><th class="num">клеток</th><th class="num">фронт</th><th class="num">max бит</th><th>класс</th></tr></thead><tbody><tr><td><code>R01</code></td><td>прямые лучи: без поворота</td><td class="num">0</td><td>id</td><td class="num">0</td><td class="num">23 625</td><td class="num">55.9</td><td class="num">10</td><td>пучки/лучи</td></tr><tr><td><code>R02</code></td><td>клубок: поворот на 1 бит</td><td class="num">1</td><td>id</td><td class="num">0</td><td class="num">19 185</td><td class="num">22.5</td><td class="num">40</td><td>облако</td></tr><tr><td><code>R03</code></td><td>поворот на 2</td><td class="num">2</td><td>id</td><td class="num">0</td><td class="num">10 875</td><td class="num">16.0</td><td class="num">64</td><td>клубок</td></tr><tr><td><code>R04</code></td><td>поворот на 3</td><td class="num">3</td><td>id</td><td class="num">0</td><td class="num">9 667</td><td class="num">16.3</td><td class="num">64</td><td>клубок</td></tr><tr><td><code>R05</code></td><td>поворот на 5</td><td class="num">5</td><td>id</td><td class="num">0</td><td class="num">6 180</td><td class="num">14.5</td><td class="num">64</td><td>клубок</td></tr><tr><td><code>R06</code></td><td>поворот на байт</td><td class="num">8</td><td>id</td><td class="num">0</td><td class="num">10 395</td><td class="num">19.7</td><td class="num">64</td><td>клубок</td></tr><tr><td><code>R07</code></td><td>поворот на 16</td><td class="num">16</td><td>id</td><td class="num">0</td><td class="num">22 005</td><td class="num">32.9</td><td class="num">24</td><td>облако</td></tr><tr><td><code>R08</code></td><td>поворот на 32</td><td class="num">32</td><td>id</td><td class="num">0</td><td class="num">23 625</td><td class="num">44.4</td><td class="num">16</td><td>пучки/лучи</td></tr><tr><td><code>R09</code></td><td>поворот 1 + перестановка байтов</td><td class="num">1</td><td>swap</td><td class="num">0</td><td class="num">14 952</td><td class="num">22.4</td><td class="num">57</td><td>облако</td></tr><tr><td><code>R10</code></td><td>поворот 8 + перестановка байтов</td><td class="num">8</td><td>swap</td><td class="num">0</td><td class="num">33 075</td><td class="num">55.9</td><td class="num">16</td><td>пучки/лучи</td></tr><tr><td><code>R11</code></td><td>поле направлений</td><td class="num">0</td><td>id</td><td class="num">1</td><td class="num">3 375</td><td class="num">12.1</td><td class="num">64</td><td>клубок</td></tr><tr><td><code>R12</code></td><td>поворот 8 + поле направлений</td><td class="num">8</td><td>id</td><td class="num">1</td><td class="num">16 007</td><td class="num">26.4</td><td class="num">32</td><td>облако</td></tr></tbody></table></div>
+<p>Классы: <b>пучки/лучи</b> — фронт далеко, плотность низкая; <b>облако</b> — промежуточное; <b>клубок</b> — биты перемешались и остались компактно. Все три возникают из одного зародыша только за счёт перестановки битов.</p>
+</section>
+
+<section>
+<h2><span class="num">03</span> Эволюция</h2>
+<p>На кадрах: полный куб 161³, зародыш в центре, голубая сфера — фронт <code>c·t + r₀</code>, справа сверху — увеличенный центр, справа снизу — шкала «бит/ячейка» (Inferno).</p>
+<div class="gallery"><figure><img loading="lazy" src="../results/ca3d3/p3_R01.png" alt="R01"><figcaption><b>R01.</b> R01: поворот 0. Шесть кубов-лучей вдоль осей плюс центральное ядро. Клеток: 23 625; фронт 55.9; максимум 10 бит/ячейка.</figcaption></figure><figure><img loading="lazy" src="../results/ca3d3/p3_R02.png" alt="R02"><figcaption><b>R02.</b> R02: поворот на 1 бит. Биты перемешались в компактный клубок. Клеток: 19 185; фронт 22.5; максимум 40 бит/ячейка.</figcaption></figure><figure><img loading="lazy" src="../results/ca3d3/p3_R04.png" alt="R04"><figcaption><b>R04.</b> R04: поворот на 3. Промежуточная форма. Клеток: 9 667; фронт 16.3; максимум 64 бит/ячейка.</figcaption></figure><figure><img loading="lazy" src="../results/ca3d3/p3_R09.png" alt="R09"><figcaption><b>R09.</b> R09: поворот 1 + перестановка байтов. Более рыхлое облако. Клеток: 14 952; фронт 22.4; максимум 57 бит/ячейка.</figcaption></figure><figure><img loading="lazy" src="../results/ca3d3/p3_R12.png" alt="R12"><figcaption><b>R12.</b> R12: поворот 8 + поле направлений. Облако с изогнутыми траекториями. Клеток: 16 007; фронт 26.4; максимум 32 бит/ячейка.</figcaption></figure></div>
+</section>
+
+<section>
+<h2><span class="num">04</span> Что это значит</h2>
+<ul>
+  <li><b>Один зародыш — разные миры.</b> Поворот на 0 даёт шесть кубов-лучей вдоль осей; поворот на 1 — компактный клубок; поворот на 8 с перестановкой байтов — облако с длинным фронтом.</li>
+  <li><b>Сохранение — жёсткое ограничение.</b> Оно запрещает «рождение» и оставляет要么 направленный перенос,要么 перемешивание. Промежуточных плотных структур мало.</li>
+  <li><b>Пустые клетки не считаются.</b> Активны тысячи клеток из миллионов; фронт — это граница причинно достигнутого, а не «вся решётка».</li>
+</ul>
+<p>Сравнение с частью 2: там правила с рождением давали плотные блобы и сети, но нарушали сохранение. Здесь сохранение выполнено точно, и структуры получаются разреженными. Это не ошибка, а цена закона сохранения.</p>
+</section>
+
+<section>
+<h2><span class="num">05</span> Проверки</h2>
+<div class="tablewrap"><table><thead><tr><th>Проверка</th><th>Статус</th><th>Значение</th></tr></thead><tbody><tr><td>все 12 правил прогнаны</td><td><span class="tag ok">PASS</span></td><td class="num small">12</td></tr><tr><td>popcount сохраняется во всех правилах</td><td><span class="tag ok">PASS</span></td><td class="num small">{&#x27;start&#x27;: 216000, &#x27;ends&#x27;: [216000]}</td></tr><tr><td>фронт не обгоняет c·t + радиус зародыша</td><td><span class="tag ok">PASS</span></td><td class="num small">55.9</td></tr><tr><td>пустые клетки не обрабатываются (активных &lt; объёма)</td><td><span class="tag ok">PASS</span></td><td class="num small">0.0079</td></tr><tr><td>есть разные морфологии</td><td><span class="tag ok">PASS</span></td><td class="num small">[&#x27;клубок&#x27;, &#x27;облако&#x27;, &#x27;пучки/лучи&#x27;]</td></tr><tr><td>картинки созданы</td><td><span class="tag ok">PASS</span></td><td class="num small">5</td></tr></tbody></table></div>
+</section>
+
+<section>
+<h2><span class="num">06</span> Файлы и запуск</h2>
+<div class="kv">
+  <div>движок</div><div><code>src/ca3d_bits.py</code> — 64-битная клетка, каналы, активные клетки</div>
+  <div>эксперимент</div><div><code>scripts/run_ca3d3.py</code> — 12 правил, картинки, <code>results/ca3d3/report.json</code></div>
+  <div>этот отчёт</div><div><code>scripts/build_ca3d3_report.py</code></div>
+</div>
+<div class="formula">python scripts/run_ca3d3.py          # ~20 с
+python scripts/build_ca3d3_report.py # этот HTML</div>
+<p>Части 1 и 2: <a href="ca3d.html">инфляционная решётка</a>, <a href="ca3d2.html">сети и блобы</a>.</p>
+</section>
+
+<footer>ogamespec/atom · issue #1 · часть 3 · сгенерировано 2026-11-16 22:35:16 · Python 3.14.4</footer>
+</div>
+</body>
+</html>
