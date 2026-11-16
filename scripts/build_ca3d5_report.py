@@ -1,12 +1,12 @@
 # -*- coding: utf-8 -*-
-"""Сборка HTML части 5 (исправленной): всё из одной клетки."""
+"""Сборка HTML части 5: локальный CA без FFT."""
 from __future__ import annotations
 import html, json, re
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 OUT = ROOT / 'results' / 'ca3d5'
-D = json.loads((OUT / 'report.json').read_text(encoding='utf-8'))
+D = json.loads((OUT / 'local.json').read_text(encoding='utf-8'))
 TPL = (ROOT / 'report' / 'ca3d5_template.html').read_text(encoding='utf-8')
 IMG = '../results/ca3d5'
 
@@ -15,19 +15,36 @@ def e(x):
     return html.escape(str(x))
 
 
-def runs_table():
+def rules_table():
     rows = []
-    for r in D['runs']:
+    for r in D['rules']:
         rows.append(f'<tr><td><code>{e(r["tag"])}</code></td>'
-                    f'<td class="num">{r["bias"]}</td><td class="num">{r["rep"]}</td>'
-                    f'<td class="num">{r["noise"]}</td><td class="num">{e(r.get("K"))}</td>'
+                    f'<td class="num">{r["mob"]}</td><td class="num">{r["charge_frac"]:.2f}</td>'
+                    f'<td class="num">{r["attr"]}</td><td class="num">{r["rep"]}</td>'
+                    f'<td class="num">{r.get("noise", 0)}</td>'
                     f'<td class="num">{r["cells"]:,}</td>'.replace(',', ' ') +
-                    f'<td class="num">{r["Dx"]}</td><td class="num">{r["Qxx"]}</td>'
-                    f'<td class="num">{r["sep"]}</td><td class="num">{r["blob"]:.2f}</td></tr>')
-    head = ('<table><thead><tr><th>прогон</th><th class="num">bias</th><th class="num">rep</th>'
-            '<th class="num">noise</th><th class="num">K</th><th class="num">клеток</th>'
-            '<th class="num">Dx</th><th class="num">Qxx</th><th class="num">sep</th>'
-            '<th class="num">blob</th></tr></thead><tbody>')
+                    f'<td class="num">{r["occ"]:.2f}</td><td class="num">{r["blob"]:.2f}</td>'
+                    f'<td class="num">{r["network"]:.2f}</td>'
+                    f'<td class="num">{r["p_clusters"]}/{r["n_clusters"]}</td></tr>')
+    head = ('<table><thead><tr><th>ID</th><th class="num">mob</th><th class="num">f</th>'
+            '<th class="num">attr</th><th class="num">rep</th><th class="num">noise</th>'
+            '<th class="num">клеток</th><th class="num">occ</th><th class="num">blob</th>'
+            '<th class="num">net</th><th class="num">кластеры p/n</th></tr></thead><tbody>')
+    return head + ''.join(rows) + '</tbody></table>'
+
+
+def long_table():
+    rows = []
+    for r in D['long']:
+        rows.append(f'<tr><td><code>{e(r["tag"])}</code></td>'
+                    f'<td class="num">{r["cells"]:,}</td>'.replace(',', ' ') +
+                    f'<td class="num">{r["occ"]:.2f}</td><td class="num">{r["blob"]:.2f}</td>'
+                    f'<td class="num">{r["network"]:.2f}</td>'
+                    f'<td class="num">{r["front"]:.1f}</td>'
+                    f'<td class="num">{r["Dx"]:.2f}</td><td class="num">{r["Qxx"]:.2f}</td></tr>')
+    head = ('<table><thead><tr><th>ID</th><th class="num">клеток</th><th class="num">occ</th>'
+            '<th class="num">blob</th><th class="num">net</th><th class="num">фронт</th>'
+            '<th class="num">Dx</th><th class="num">Qxx</th></tr></thead><tbody>')
     return head + ''.join(rows) + '</tbody></table>'
 
 
@@ -43,29 +60,25 @@ def checks_table():
 
 
 def gallery():
-    caps = [
-        ('p5_dip_T4.png', 'T=4: клетка начала раскалываться; появляются два облака.'),
-        ('p5_dip_T8.png', 'T=8: p и n разошлись, кулоновское поле стягивает их.'),
-        ('p5_dip_T16.png', 'T=16: связанная пара — эмерджентный диполь.'),
-        ('p5_dip_T24.png', 'T=24: диполь стабилен, Dx ≈ 7, расстояние ≈ 12 клеток.'),
-        ('p5_noise.png', 'Шум из одной клетки: пёстрый мультипольный узор (Qxx ≈ 0.84).'),
-    ]
+    caps = {'L01': 'L01: медленный обмен, компактный блоб.',
+            'L03': 'L03: асимметрия f=0.8 + diag-bias + шум — перколирующая сеть (net = 0.50).',
+            'L08': 'L08: сильный шум, но всё равно компактный блоб.'}
     cards = []
-    for fn, cap in caps:
-        if (OUT / fn).exists():
-            cards.append(f'<figure><img loading="lazy" src="{IMG}/{fn}" alt="{e(cap)}">'
-                         f'<figcaption><b>Рис.</b> {cap}</figcaption></figure>')
+    for r in D['long']:
+        if r.get('image'):
+            cards.append(f'<figure><img loading="lazy" src="{IMG}/{r["image"]}" alt="{e(r["tag"])}">'
+                         f'<figcaption><b>{e(r["tag"])}, T=1000.</b> {caps.get(r["tag"], "")} '
+                         f'Клеток: {r["cells"]:,}; blob {r["blob"]:.2f}.'.replace(',', ' ') +
+                         '</figcaption></figure>')
     return ''.join(cards)
 
 
 def main():
-    c = D['coulomb']
     out = TPL
-    out = out.replace('{{F_SLOPE}}', f'{c["force_slope"]:.2f}'.replace('-', '−'))
-    out = out.replace('{{PHI_SLOPE}}', f'{c["phi_slope"]:.2f}'.replace('-', '−'))
-    out = out.replace('{{RUNS_TABLE}}', runs_table())
-    out = out.replace('{{GALLERY}}', gallery())
+    out = out.replace('{{RULES_TABLE}}', rules_table())
+    out = out.replace('{{LONG_TABLE}}', long_table())
     out = out.replace('{{CHECKS}}', checks_table())
+    out = out.replace('{{GALLERY}}', gallery())
     out = out.replace('{{N_CHECKS}}', str(len(D['checks'])))
     out = out.replace('{{GENERATED}}', e(D['meta']['generated']))
     out = out.replace('{{PYTHON}}', e(D['meta']['python']))
