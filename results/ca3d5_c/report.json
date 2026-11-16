@@ -1,0 +1,57 @@
+{
+ "count": 1156461,
+ "P": 12800000,
+ "Nbits": 3200000,
+ "front": 371.25,
+ "blob": 0.4368755701446322,
+ "network": 0.027834527454488698,
+ "clusters": 1,
+ "grid": 745,
+ "L": 60001,
+ "T": 10000,
+ "N": 16000000,
+ "space_radius": 30000,
+ "ratio": 3.0,
+ "images": [
+  "p5_c_full.png",
+  "p5_c_zoom.png"
+ ],
+ "checks": [
+  {
+   "name": "T=10 000 (C)",
+   "ok": true,
+   "value": 10000
+  },
+  {
+   "name": "N=16 000 000 бит",
+   "ok": true,
+   "value": 16000000
+  },
+  {
+   "name": "R=30 000 > c·t=10 000",
+   "ok": true,
+   "value": 3.0
+  },
+  {
+   "name": "фронт не дошёл до стенки",
+   "ok": true,
+   "value": 371.25
+  },
+  {
+   "name": "есть структура",
+   "ok": true,
+   "value": 1156461
+  },
+  {
+   "name": "картинки",
+   "ok": true,
+   "value": [
+    "p5_c_full.png",
+    "p5_c_zoom.png"
+   ]
+  }
+ ],
+ "meta": {
+  "generated": "2026-11-17 00:38:06"
+ }
+}
