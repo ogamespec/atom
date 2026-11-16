@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Сети и блобы: 100 новых правил — часть 2</title>
+<style>
+:root{--bg:#070a10;--panel:#0d131d;--ink:#dce6f4;--muted:#8ea2bd;--acc:#ffb454;--acc2:#7cc4ff;--line:#1d2a3b;--mono:"SFMono-Regular",Consolas,monospace}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(1000px 500px at 20% -10%,#1a2436,transparent 60%),var(--bg);color:var(--ink);font:16px/1.65 "Inter","Segoe UI",Arial,sans-serif}
+a{color:var(--acc2);text-decoration:none}a:hover{text-decoration:underline}
+.wrap{max-width:1180px;margin:0 auto;padding:0 26px 80px}
+header{padding:58px 0 26px;border-bottom:1px solid var(--line);margin-bottom:30px}
+.kicker{color:var(--acc);font-size:12.5px;letter-spacing:.18em;text-transform:uppercase;font-weight:700}
+h1{font-size:clamp(30px,4.2vw,52px);line-height:1.1;margin:.3em 0 .25em;letter-spacing:-.02em}
+h1 .thin{color:var(--muted);font-weight:400}
+.lead{font-size:18px;color:#b9c7da;max-width:900px}
+.badges{display:flex;flex-wrap:wrap;gap:8px;margin-top:20px}
+.badge{font:12px var(--mono);padding:8px 11px;border:1px solid var(--line);border-radius:999px;color:var(--muted);background:#0b1119}
+.badge b{color:var(--ink)}
+section{margin:0 0 46px}
+h2{font-size:27px;margin:0 0 12px;display:flex;gap:12px;align-items:baseline}
+h2 .num{font:12.5px var(--mono);color:var(--acc);border:1px solid #3a2a17;background:#1a1208;padding:4px 8px;border-radius:6px}
+h3{font-size:19px;margin:26px 0 8px}
+p{margin:0 0 14px}
+ul,ol{padding-left:24px;margin:0 0 16px}li{margin:5px 0}
+.muted{color:var(--muted)}.small{font-size:13.5px}
+code{font-family:var(--mono);font-size:.9em;background:#101a27;border:1px solid var(--line);border-radius:5px;padding:2px 5px;color:#ffd9a3}
+.formula{font-family:var(--mono);font-size:14px;background:#0b121c;border:1px solid var(--line);border-left:3px solid var(--acc);border-radius:8px;padding:12px 14px;margin:12px 0 18px;overflow-x:auto}
+.note{background:#0d1622;border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin:18px 0;color:#c3d1e3}.note b{color:var(--acc)}
+figure{margin:22px 0;background:#0a1018;border:1px solid var(--line);border-radius:12px;padding:10px}
+figure img{width:100%;height:auto;border-radius:7px;background:#000;display:block}
+figcaption{font-size:13.5px;color:var(--muted);padding:9px 6px 2px}figcaption b{color:#d6e3f4}
+.tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:10px;margin:14px 0 20px;background:#0a1018}
+table{border-collapse:collapse;width:100%;font-size:13px}
+th,td{padding:8px 10px;border-bottom:1px solid #16202d;text-align:left;vertical-align:top}
+th{background:#101927;color:#9fb3cc;font-size:11.5px;text-transform:uppercase;letter-spacing:.03em;white-space:nowrap}
+tr:last-child td{border-bottom:none}tbody tr:hover{background:#0f1824}
+td.num,th.num{text-align:right;font-family:var(--mono);font-size:12px;white-space:nowrap}
+.tag{font:11.5px var(--mono);padding:4px 7px;border-radius:5px;border:1px solid var(--line);color:#a9bcd4;background:#0d1521}
+.tag.ok{color:#9ff0c5;border-color:#1d3b2e;background:#0a1a13}.tag.no{color:#ffb3b3;border-color:#3b1d1d;background:#1a0d0d}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(310px,1fr));gap:16px;margin:18px 0}
+.card{background:linear-gradient(180deg,#0f1724,#0b121b);border:1px solid var(--line);border-radius:12px;padding:18px}
+.card h3{margin:0 0 6px;font-size:18px}.card .fam{font:11px var(--mono);color:var(--acc);letter-spacing:.12em;text-transform:uppercase}
+.card p{font-size:13.6px;color:#b7c6d9}.card .formula{font-size:12.5px;margin:10px 0}
+.card .props{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.gallery{display:grid;grid-template-columns:repeat(auto-fit,minmax(330px,1fr));gap:16px}
+.gallery figure{margin:0}
+.legendgrid{display:flex;flex-wrap:wrap;gap:24px;margin:14px 0 18px;padding:13px 16px;border:1px solid var(--line);border-radius:10px;background:#0a1018;font-size:12.5px;color:#b9c9dd}
+.bar{width:160px;height:12px;border-radius:6px;border:1px solid #2a3a4e;margin-bottom:6px}
+.bar.inferno{background:linear-gradient(90deg,#000004,#420a68,#932667,#dd513a,#fca50a,#fcffa4)}
+.bar.tumor{background:linear-gradient(90deg,#05070a,#ff8c42,#7a1f1f)}
+.frontline{display:inline-block;width:36px;height:2px;background:#5ac3ff;vertical-align:middle;margin-right:8px}
+footer{border-top:1px solid var(--line);padding-top:20px;color:var(--muted);font-size:13px;margin-top:40px}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:6px 16px;font-size:13.5px}.kv div:nth-child(odd){color:var(--muted)}
+details{margin:16px 0}summary{cursor:pointer;color:var(--acc2);font-size:14px}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <div class="kicker">ogamespec/atom · issue #1 · часть 2</div>
+  <h1>Сети и блобы<br><span class="thin">100 новых правил, отсев и картинки</span></h1>
+  <p class="lead">В первой части структуры были пластинами, фракталами и туманом. Здесь — четыре новых семейства, специально нацеленных на две морфологии: <b>сети</b> (ветвящиеся кластеры, пена, графы) и <b>блобы</b> (компактные кластеры с ядром). Сто правил прогнаны, измерены и просеяны; в отчёт попали только те, что дают богатую структуру.</p>
+  <div class="badges">
+    <span class="badge">новых правил: <b>{{N_RULES}}</b></span>
+    <span class="badge">живых: <b>{{N_ALIVE}}</b></span>
+    <span class="badge">структурных: <b>{{N_STRUCT}}</b></span>
+    <span class="badge">отобрано: <b>{{N_SEL}}</b></span>
+    <span class="badge">проверок: <b>{{N_CHECKS}}</b></span>
+  </div>
+</header>
+
+<section>
+<h2><span class="num">01</span> Что было не так и что считается сетью</h2>
+<p>Замечание к первой части было точным: среди правил не было ни явных сетей, ни блобов. Пластины SPROUT — это протяжённые фронты, фракталы HELIX — разреженные точки, CYCLIC — фазовая турбулентность. Здесь мы сначала определяем морфологию, а потом придумываем правила под неё:</p>
+<ul>
+  <li><b>сеть</b> — один связный кластер с большой поверхностью, скелетом и ветвлениями, желательно пронизывающий куб (перколяция);</li>
+  <li><b>блоб</b> — компактный кластер с малой поверхностью на единицу объёма и высоким заполнением своей области;</li>
+  <li><b>пена</b> — сеть поверхностей (стенок), разделяющих домены; домены — блобы, стенки — сеть.</li>
+</ul>
+<p>Куб на всех кадрах — <b>весь текущий объём пространства</b> (161³), структура развивается в центре, голубая сфера — <b>фронт скорости света</b> r = c·t. Справа сверху — увеличенный центр, справа снизу — цветовая шкала.</p>
+<div class="legendgrid">
+  <div><div class="bar inferno"></div>0 … 1: плотность/занятость (Inferno)</div>
+  <div><div class="bar tumor"></div>опухоль: 1 — оранжевый, 2 — некроз (тёмный)</div>
+  <div><span class="frontline"></span>фронт r = c·t</div>
+</div>
+<div class="note"><b>Про пену.</b> Правило фаз не имеет вакуума: все клетки — материя, поэтому пена по построению заполняет весь куб. Чтобы показать её в центре, как договорились, мы вырезаем центральный фрагмент 41³ и окружаем его пустым пространством; на кадре это подписано. Это фрагмент пены, а не «пена остановилась». В срезах видно её клеточное строение.</div>
+</section>
+
+<section>
+<h2><span class="num">02</span> Четыре семейства</h2>
+<div class="cards">
+  <div class="card"><div class="fam">POTTS · пена</div><h3>Фазы и стенки</h3>
+    <p>У клетки фаза 0…Q−1. За такт она принимает фазу большинства шести соседей; при ничьей выбор случайный, малая доля шума не даёт доменам схлопнуться в один. Домены — блобы, их границы — сеть стенок (пена).</p>
+    <div class="formula">s'(x) = argmax<sub>q</sub> # { соседи в фазе q } + шум</div>
+    <div class="props"><span class="tag">Q = 4…16</span><span class="tag">c = 1</span><span class="tag">пена/домены</span></div>
+  </div>
+  <div class="card"><div class="fam">INVASION · сеть</div><h3>Пути наименьшего сопротивления</h3>
+    <p>Каждой клетке дан случайный порог. Кластер начинается в центре и на каждом шаге поглощает соседа с наименьшим порогом. Получается ветвящаяся сеть, которая обходит «дорогие» области и образует длинные ветви.</p>
+    <div class="formula">next = argmin<sub>n ∈ ∂C</sub> θ(n);  C ← C ∪ &#123;next&#125;</div>
+    <div class="props"><span class="tag">N = 5k…20k</span><span class="tag">α = 0.5…1.3</span><span class="tag">сеть</span></div>
+  </div>
+  <div class="card"><div class="fam">BOND · граф</div><h3>Рёбра и узлы</h3>
+    <p>В клетке 6 бит направлений. Активные узлы выпускают рёбра в соседние клетки; граф ветвится и замыкается в петли. Это сеть связей, а не масса — её естественно рисовать линиями.</p>
+    <div class="formula">b(x,d) = 1 ⇒ b(x+e<sub>d</sub>, −d) = 1</div>
+    <div class="props"><span class="tag">T = 30…80</span><span class="tag">p = 0.1…0.95</span><span class="tag">граф</span></div>
+  </div>
+  <div class="card"><div class="fam">GROWTH · блобы</div><h3>Eden и опухоль</h3>
+    <p><b>Eden:</b> пустая клетка рождается, если у неё есть занятый сосед; получается компактный огранённый блоб. <b>Опухоль:</b> клетки делятся при достатке питания и потребляют его; в центре питание кончается — появляется некротическое ядро, а при низкой диффузии — инвазивные ветви.</p>
+    <div class="formula">Eden: s'=1 при s=0 и n≥k;  Tumor: деление при N&gt;θ, некроз при N&lt;θ<sub>d</sub></div>
+    <div class="props"><span class="tag">T = 12…70</span><span class="tag">D, c, θ</span><span class="tag">блобы</span></div>
+  </div>
+</div>
+</section>
+
+<section>
+<h2><span class="num">03</span> Сто правил и отсев</h2>
+<p>Сгенерировано ровно 100 правил: 25 Potts, 25 Invasion, 25 Bond, 15 Eden, 10 Tumor. Каждое прогнано при L = 65; для каждого посчитаны занятость, число кластеров, surface/volume, компактность, перколяция, длина скелета и ветвления. Затем отсеяны:</p>
+<ul>
+  <li><b>мёртвые</b> — меньше 100 занятых клеток;</li>
+  <li><b>туман</b> — занятость больше 60%;</li>
+  <li><b>слабые</b> — network &lt; 0.55, blob &lt; 0.55 и не пена.</li>
+</ul>
+{{FUNNEL}}
+<div class="tablewrap">{{TOP_TABLE}}</div>
+{{SCATTER}}
+<p>Осталось <b>{{N_STRUCT}}</b> структурных правил. Для отчёта отобраны пять представителей: три сети (Invasion, Potts-пена, Bond-граф) и два блоба (опухоль, Eden). Их метрики — в таблице выше. Полная таблица всех 100 правил — ниже.</p>
+<details><summary>Показать все 100 правил и метрики</summary>
+<div class="tablewrap">{{ALL_TABLE}}</div>
+</details>
+</section>
+
+<section>
+<h2><span class="num">04</span> Сети</h2>
+<h3>4.1 Инвазия: ветвящийся кластер и его скелет</h3>
+<p>Кластер из 15 000 клеток в кубе 161³. Слева — масса, справа — скелет: 11 345 узлов и 17 852 ребра. Скелет — это и есть сеть: длинные ветви, развилки, обходы плотных областей. Фронт r = c·t = 50 показан голубой сферой.</p>
+{{NET_GALLERY}}
+<h3>4.2 Пена: домены и стенки</h3>
+<p>Пена — это сеть поверхностей. На 3D-кадре показан центральный фрагмент 41³ (иначе пена заполняет весь куб); на срезах — клеточное строение: цветные домены, чёрные стенки.</p>
+{{FOAM_GALLERY}}
+</section>
+
+<section>
+<h2><span class="num">05</span> Блобы</h2>
+<p>Блоб — компактный кластер. Опухоль даёт округлое тело с тёмным некротическим ядром; Eden — огранённый кристаллический блоб. Оба растут из центра, фронт окружает их, а не заполняет куб.</p>
+{{BLOB_GALLERY}}
+</section>
+
+<section>
+<h2><span class="num">06</span> Метрики</h2>
+<div class="formula">network = 0.45·[перколяция] + 0.25·min(S/V / 0.55,1)<br>&nbsp;&nbsp;+ 0.20·min((L<sub>скел</sub>/V) / 0.45,1) + 0.10·min(ветвления/80,1)</div>
+<div class="formula">blob = 0.55·min(compactness/0.65,1) + 0.30·largest/V<br>&nbsp;&nbsp;+ 0.15·max(0, 1 − S/V / 0.45)</div>
+<p><b>S/V</b> — поверхность на единицу объёма; <b>compactness</b> — объём кластера, делённый на объём описанной сферы; <b>перколяция</b> — кластер соединяет противоположные стенки. Это эвристики для ранжирования, а не физические величины; сырые числа приведены в таблицах.</p>
+</section>
+
+<section>
+<h2><span class="num">07</span> Что отсеяно и почему</h2>
+<ul>
+  <li><b>Мёртвые</b> — Bond с p слишком мал или T мал: граф не успевает вырасти; Eden с k=2 из гладкого зародыша не рождает ни одной клетки.</li>
+  <li><b>Туман</b> — Potts без шума: фазы сливаются в один домен; Invasion с очень большим N заполняет куб.</li>
+  <li><b>Слабые</b> — структура есть, но либо тонкая (мало ветвлений), либо почти шар без внутренней иерархии.</li>
+</ul>
+<p>Именно поэтому в отчёт попали не «самые плотные», а самые <em>структурные</em>: инвазия с ветвлениями, пена с доменами и блобы с ядром.</p>
+</section>
+
+<section>
+<h2><span class="num">08</span> Проверки</h2>
+<div class="tablewrap">{{CHECKS}}</div>
+<p class="small muted">Проверки выполняются в <code>scripts/run_ca3d2.py</code> и <code>scripts/run_ca3d2_deep.py</code>; таблица собирается из <code>results/ca3d2/*.json</code>.</p>
+</section>
+
+<section>
+<h2><span class="num">09</span> Файлы и запуск</h2>
+<div class="kv">
+  <div>правила</div><div><code>src/ca3d_morph.py</code> — Potts, Tumor, Invasion, Bond</div>
+  <div>метрики</div><div><code>src/ca3d_shape.py</code> — network/blob/foam, скелет, перколяция</div>
+  <div>рендер</div><div><code>src/ca3d_net.py</code> — графы и скелеты; <code>src/ca3d_render.py</code> — воксели</div>
+  <div>скрининг</div><div><code>scripts/run_ca3d2.py</code> — 100 правил, отсев, <code>screening.json</code></div>
+  <div>глубокие</div><div><code>scripts/run_ca3d2_deep.py</code> — 5 представителей, картинки, <code>deep.json</code></div>
+  <div>этот отчёт</div><div><code>scripts/build_ca3d2_report.py</code></div>
+</div>
+<div class="formula">python scripts/run_ca3d2.py          # 100 правил, ~10 с
+python scripts/run_ca3d2_deep.py     # картинки, ~1 мин
+python scripts/build_ca3d2_report.py # этот HTML</div>
+<p>Первая часть исследования — <a href="ca3d.html">report/ca3d.html</a>: инфляционная решётка, пространство правил, SPROUT/HELIX/TOPPLE/TWIN, полный куб и фронт.</p>
+</section>
+
+<footer>ogamespec/atom · issue #1 · часть 2 · сгенерировано {{GENERATED}} · Python {{PYTHON}}</footer>
+</div>
+</body>
+</html>

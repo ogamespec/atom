@@ -55,7 +55,8 @@ def colorize(img: np.ndarray, gamma: float = 0.7, percent: float = 99.8,
         img = gaussian_filter(img.astype(np.float32), blur)
     ref = np.percentile(img[img > 0], percent) if np.any(img > 0) else 1.0
     x = np.clip(gain * img / (ref + 1e-12), 0, 1) ** gamma
-    return (matplotlib.colormaps[cmap](x)[..., :3] * 255).astype(np.uint8), x
+    cm = cmap if callable(cmap) else matplotlib.colormaps[cmap]
+    return (cm(x)[..., :3] * 255).astype(np.uint8), x
 
 
 def render_volume(g: np.ndarray, tau: float = 0.05, gamma: float = 0.7,
@@ -188,27 +189,30 @@ def frame(g: np.ndarray, L: int, t: int, size: int = 512, cutaway: bool = False,
     return rgb
 
 
-def slice_mosaic(g: np.ndarray, path: str, n: int = 6, cmap: str = CMAP,
-                 title: str | None = None) -> None:
-    """Мозаика n x n срезов по z."""
+def slice_mosaic(g: np.ndarray, path: str, n: int = 6, cmap=CMAP,
+                 title: str | None = None, vmin: float | None = None,
+                 vmax: float | None = None) -> None:
+    """Мозаика n разных срезов по z (2x3, 2x2 или 1x3)."""
     L = g.shape[0]
     picks = np.linspace(0, L - 1, n).astype(int)
-    vmax = float(g.max()) if g.size else 1.0
-    fig, axes = plt.subplots(n, n, figsize=(10, 10))
-    for ax, z in zip(axes.ravel(), np.repeat(picks, n)):
-        ax.imshow(g[z], cmap=cmap, origin='lower', interpolation='nearest', vmin=0, vmax=vmax)
+    cols = 3 if n > 4 else (2 if n > 2 else n)
+    rows = int(np.ceil(n / cols))
+    fig, axes = plt.subplots(rows, cols, figsize=(4.2 * cols, 4.0 * rows))
+    axes = np.atleast_2d(axes)
+    vmax = vmax if vmax is not None else (float(g.max()) if g.size else 1.0)
+    vmin = vmin if vmin is not None else 0.0
+    for ax, z in zip(axes.ravel(), picks):
+        ax.imshow(g[z], cmap=cmap, origin='lower', interpolation='nearest',
+                  vmin=vmin, vmax=vmax)
         ax.set_xticks([]); ax.set_yticks([])
-        ax.set_title(f'z={z}', fontsize=7)
+        ax.set_title(f'z={z}', fontsize=8)
+    for ax in axes.ravel()[len(picks):]:
+        ax.axis('off')
     if title:
         fig.suptitle(title, fontsize=12)
     fig.tight_layout()
     fig.savefig(path, dpi=130)
     plt.close(fig)
-
-
-# ==========================================================================
-#  Перспективный воксельный рендер: ячейки как кубики, решётка видна
-# ==========================================================================
 
 
 def _camera(canvas_L: int, azim: float = 38.0, elev: float = 24.0,
@@ -272,7 +276,7 @@ def _draw_legend(dr, size, cmap, vmax, label, font):
     x0, y0, w, h = size - 52, size - 168, 14, 104
     steps = 80
     for i in range(steps):
-        col = matplotlib.colormaps[cmap](1 - i / (steps - 1))
+        col = (cmap if callable(cmap) else matplotlib.colormaps[cmap])(1 - i / (steps - 1))
         rgb = tuple(int(255 * c) for c in col[:3])
         dr.line([(x0, y0 + i * h / steps), (x0 + w, y0 + i * h / steps)],
                 fill=rgb + (255,), width=2)
@@ -396,7 +400,8 @@ def render_voxels(g: np.ndarray, size: int = 640, canvas_L: int | None = None,
     order = np.argsort(-z)
     sx, sy, z, t = sx[order], sy[order], z[order], t[order]
     zmin, zmax = z.min(), z.max()
-    base = matplotlib.colormaps[cmap](t)[:, :3]
+    cm = cmap if callable(cmap) else matplotlib.colormaps[cmap]
+    base = cm(t)[:, :3]
     # глубина: дальние темнее
     depth = 1.0 - 0.55 * (z - zmin) / max(zmax - zmin, 1e-9)
     depth = 0.45 + 0.55 * (1 - (z - zmin) / max(zmax - zmin, 1e-9))
