@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>16 млн бит в одной клетке: перенос, обмен и кости — часть 4</title>
+<style>
+:root{--bg:#070a10;--ink:#dce6f4;--muted:#8ea2bd;--acc:#ffb454;--acc2:#7cc4ff;--line:#1d2a3b;--mono:"SFMono-Regular",Consolas,monospace}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(1000px 500px at 15% -10%,#1a2436,transparent 60%),var(--bg);color:var(--ink);font:16px/1.65 "Inter","Segoe UI",Arial,sans-serif}
+a{color:var(--acc2);text-decoration:none}a:hover{text-decoration:underline}
+.wrap{max-width:1120px;margin:0 auto;padding:0 26px 80px}
+header{padding:56px 0 26px;border-bottom:1px solid var(--line);margin-bottom:30px}
+.kicker{color:var(--acc);font-size:12.5px;letter-spacing:.18em;text-transform:uppercase;font-weight:700}
+h1{font-size:clamp(30px,4.2vw,52px);line-height:1.1;margin:.3em 0 .25em;letter-spacing:-.02em}
+h1 .thin{color:var(--muted);font-weight:400}
+.lead{font-size:18px;color:#b9c7da;max-width:900px}
+.badges{display:flex;flex-wrap:wrap;gap:8px;margin-top:20px}
+.badge{font:12px var(--mono);padding:8px 11px;border:1px solid var(--line);border-radius:999px;color:var(--muted);background:#0b1119}.badge b{color:var(--ink)}
+section{margin:0 0 46px}
+h2{font-size:27px;margin:0 0 12px;display:flex;gap:12px;align-items:baseline}
+h2 .num{font:12.5px var(--mono);color:var(--acc);border:1px solid #3a2a17;background:#1a1208;padding:4px 8px;border-radius:6px}
+h3{font-size:19px;margin:26px 0 8px}
+p{margin:0 0 14px}ul,ol{padding-left:24px;margin:0 0 16px}li{margin:5px 0}
+.muted{color:var(--muted)}.small{font-size:13.5px}
+code{font-family:var(--mono);font-size:.9em;background:#101a27;border:1px solid var(--line);border-radius:5px;padding:2px 5px;color:#ffd9a3}
+.formula{font-family:var(--mono);font-size:14px;background:#0b121c;border:1px solid var(--line);border-left:3px solid var(--acc);border-radius:8px;padding:12px 14px;margin:12px 0 18px;overflow-x:auto}
+.note{background:#0d1622;border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin:18px 0;color:#c3d1e3}.note b{color:var(--acc)}
+figure{margin:22px 0;background:#0a1018;border:1px solid var(--line);border-radius:12px;padding:10px}
+figure img{width:100%;height:auto;border-radius:7px;background:#000;display:block}
+figcaption{font-size:13.5px;color:var(--muted);padding:9px 6px 2px}figcaption b{color:#d6e3f4}
+.tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:10px;margin:14px 0 20px;background:#0a1018}
+table{border-collapse:collapse;width:100%;font-size:13px}
+th,td{padding:8px 10px;border-bottom:1px solid #16202d;text-align:left;vertical-align:top}
+th{background:#101927;color:#9fb3cc;font-size:11.5px;text-transform:uppercase;letter-spacing:.03em;white-space:nowrap}
+tr:last-child td{border-bottom:none}tbody tr:hover{background:#0f1824}
+td.num,th.num{text-align:right;font-family:var(--mono);font-size:12px;white-space:nowrap}
+.tag{font:11.5px var(--mono);padding:4px 7px;border-radius:5px;border:1px solid var(--line);color:#a9bcd4;background:#0d1521}
+.tag.ok{color:#9ff0c5;border-color:#1d3b2e;background:#0a1a13}.tag.no{color:#ffb3b3;border-color:#3b1d1d;background:#1a0d0d}
+.gallery{display:grid;grid-template-columns:repeat(auto-fit,minmax(330px,1fr));gap:16px}
+.gallery figure{margin:0}
+.legendgrid{display:flex;flex-wrap:wrap;gap:24px;margin:14px 0 18px;padding:13px 16px;border:1px solid var(--line);border-radius:10px;background:#0a1018;font-size:12.5px;color:#b9c9dd}
+.bar{width:160px;height:12px;border-radius:6px;border:1px solid #2a3a4e;margin-bottom:6px}
+.bar.inf{background:linear-gradient(90deg,#000004,#420a68,#932667,#dd513a,#fca50a,#fcffa4)}
+.frontline{display:inline-block;width:36px;height:2px;background:#5ac3ff;vertical-align:middle;margin-right:8px}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:6px 16px;font-size:13.5px}.kv div:nth-child(odd){color:var(--muted)}
+footer{border-top:1px solid var(--line);padding-top:20px;color:var(--muted);font-size:13px;margin-top:40px}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <div class="kicker">ogamespec/atom · issue #1 · часть 4</div>
+  <h1>16 миллионов бит в одной клетке<br><span class="thin">перенос долей, обмен и кости</span></h1>
+  <p class="lead">Зародыш — <b>одна клетка с 16 000 000 единичных бит</b>. За такт клетка отдаёт соседям доли своих бит, остаток остаётся; соседи могут обменяться долями. Ни один бит не рождается и не исчезает. Часть правил детерминирована, часть — случайна: «Бог играет в кости».</p>
+  <div class="badges">
+    <span class="badge">бит в зародыше: <b>16 000 000</b></span>
+    <span class="badge">детерминированных правил: <b>12</b></span>
+    <span class="badge">случайных прогонов: <b>12</b></span>
+    <span class="badge">сохранение popcount: <b>точно</b></span>
+    <span class="badge">проверок: <b>11</b></span>
+  </div>
+</header>
+
+<section>
+<h2><span class="num">01</span> Модель: одна клетка, 16 млн бит</h2>
+<p>Клетка хранит счётчик бит. Зародыш — одна клетка в центре с <code>N = 16 000 000</code>. За такт клетка делит свои биты на 7 долей: 6 — соседям по направлениям, 1 — себе. Доли можно ограничить сверху (<code>K</code> бит на направление): тогда в центре остаётся плотное ядро, а наружу уходит фронт. Обмен — соседи меняются 10% долей; это и есть обменное взаимодействие, оно сохраняет сумму.</p>
+<div class="formula">s'(x) = s(x) − Σ<sub>d</sub> share<sub>d</sub> + Σ<sub>d</sub> shift<sub>d</sub>(share<sub>d</sub>)<br>
+Σ<sub>x</sub> s(x) = 16 000 000  для любого такта и любого правила</div>
+<ul>
+  <li><b>Пустые клетки пропускаются</b>: активных клеток 20–160 тысяч из 4.17 млн (0.5–3.8%).</li>
+  <li><b>Биты не появляются из ничего</b>: сумма 16 000 000 проверена на каждом прогоне.</li>
+  <li><b>Фронт</b> не обгоняет <code>c·t</code>: бит за такт переходит не более чем на одну клетку.</li>
+</ul>
+<div class="note"><b>Почему 16 млн, а не 1 млрд.</b> Миллиард бит в одной клетке — это 125 МБ только на один счётчик, а сценарии с обменом требуют нескольких копий. 16 млн бит дают богатую картину (до 160 тысяч активных клеток) и считаются за секунды. Это тот же режим, просто меньше цифра.</div>
+</section>
+
+<section>
+<h2><span class="num">02</span> Детерминированные правила</h2>
+<p>Меняются веса направлений (равномерно, по x/z, радиально наружу) и предел <code>K</code>. Радиальный поток даёт оболочку, <code>K</code> — ядро с гало.</p>
+<div class="tablewrap"><table><thead><tr><th>ID</th><th>веса</th><th class="num">K</th><th>обмен</th><th class="num">клеток</th><th class="num">фронт</th><th class="num">max log</th><th class="num">сжатие</th><th>класс</th></tr></thead><tbody><tr><td><code>C01</code></td><td>uniform</td><td class="num">None</td><td>none</td><td class="num">23 269</td><td class="num">18.1</td><td class="num">4.11</td><td class="num">0.003</td><td>облако</td></tr><tr><td><code>C02</code></td><td>uniform</td><td class="num">20000</td><td>none</td><td class="num">13 331</td><td class="num">15.0</td><td class="num">7.02</td><td class="num">0.002</td><td>ядро+гало</td></tr><tr><td><code>C03</code></td><td>x</td><td class="num">None</td><td>none</td><td class="num">26 464</td><td class="num">19.2</td><td class="num">4.35</td><td class="num">0.006</td><td>облако</td></tr><tr><td><code>C04</code></td><td>z</td><td class="num">None</td><td>none</td><td class="num">22 206</td><td class="num">18.2</td><td class="num">4.16</td><td class="num">0.004</td><td>облако</td></tr><tr><td><code>C05</code></td><td>radial</td><td class="num">None</td><td>none</td><td class="num">134 263</td><td class="num">37.3</td><td class="num">3.62</td><td class="num">0.011</td><td>радиальная оболочка</td></tr><tr><td><code>C06</code></td><td>radial</td><td class="num">None</td><td>x</td><td class="num">142 213</td><td class="num">38.9</td><td class="num">3.54</td><td class="num">0.012</td><td>радиальная оболочка</td></tr><tr><td><code>C07</code></td><td>radial</td><td class="num">None</td><td>all</td><td class="num">158 393</td><td class="num">39.6</td><td class="num">3.42</td><td class="num">0.020</td><td>радиальная оболочка</td></tr><tr><td><code>C08</code></td><td>radial</td><td class="num">2000</td><td>none</td><td class="num">52 423</td><td class="num">31.3</td><td class="num">7.18</td><td class="num">0.006</td><td>ядро+гало</td></tr><tr><td><code>C09</code></td><td>radial</td><td class="num">20000</td><td>x</td><td class="num">96 983</td><td class="num">35.0</td><td class="num">6.30</td><td class="num">0.009</td><td>ядро+гало</td></tr><tr><td><code>C10</code></td><td>radial</td><td class="num">500</td><td>none</td><td class="num">30 909</td><td class="num">27.8</td><td class="num">7.20</td><td class="num">0.004</td><td>ядро+гало</td></tr><tr><td><code>C11</code></td><td>diag</td><td class="num">None</td><td>none</td><td class="num">19 747</td><td class="num">18.3</td><td class="num">4.22</td><td class="num">0.004</td><td>облако</td></tr><tr><td><code>C12</code></td><td>uniform</td><td class="num">None</td><td>all</td><td class="num">27 974</td><td class="num">19.2</td><td class="num">4.02</td><td class="num">0.005</td><td>облако</td></tr></tbody></table></div>
+<div class="gallery"><figure><img loading="lazy" src="../results/ca3d4/p4_C01.png" alt="C01  равномерный перенос: облако вокруг центра. Клеток: 23 269; фронт 18.1."><figcaption><b>Рис. 2.01.</b> C01  равномерный перенос: облако вокруг центра. Клеток: 23 269; фронт 18.1.</figcaption></figure><figure><img loading="lazy" src="../results/ca3d4/p4_C05.png" alt="C05  радиальный поток наружу: лобастая оболочка. Клеток: 134 263; фронт 37.3."><figcaption><b>Рис. 2.05.</b> C05  радиальный поток наружу: лобастая оболочка. Клеток: 134 263; фронт 37.3.</figcaption></figure><figure><img loading="lazy" src="../results/ca3d4/p4_C06.png" alt="C06  радиальный поток + обмен по x: текстура меняется  фронт шире. Клеток: 142 213; фронт 38.9."><figcaption><b>Рис. 2.06.</b> C06  радиальный поток + обмен по x: текстура меняется  фронт шире. Клеток: 142 213; фронт 38.9.</figcaption></figure><figure><img loading="lazy" src="../results/ca3d4/p4_C08.png" alt="C08  радиальный поток с K = 2000: плотное ядро и гало. Клеток: 52 423; фронт 31.3."><figcaption><b>Рис. 2.08.</b> C08  радиальный поток с K = 2000: плотное ядро и гало. Клеток: 52 423; фронт 31.3.</figcaption></figure><figure><img loading="lazy" src="../results/ca3d4/p4_C10.png" alt="C10  K = 500: ядро ещё компактнее. Клеток: 30 909; фронт 27.8."><figcaption><b>Рис. 2.10.</b> C10  K = 500: ядро ещё компактнее. Клеток: 30 909; фронт 27.8.</figcaption></figure><figure><img loading="lazy" src="../results/ca3d4/p4_C05_slices.png" alt="C05: срезы радиальной оболочки. Видно, что это объёмное облако с плотным центром."><figcaption><b>Рис. 2.6.</b> C05: срезы радиальной оболочки. Видно, что это объёмное облако с плотным центром.</figcaption></figure></div>
+</section>
+
+<section>
+<h2><span class="num">03</span> Бог играет в кости</h2>
+<p>Четыре случайных правила: случайные три направления, случайный поворот радиальных весов, случайный обмен и случайные целые веса. Каждое прогнано с тремя сидами. Сумма бит сохраняется в каждом прогоне — случайность меняет <em>куда</em> идут биты, но не <em>сколько</em> их.</p>
+<div class="tablewrap"><table><thead><tr><th>ID</th><th>режим</th><th class="num">сид</th><th class="num">клеток</th><th class="num">фронт</th><th class="num">max log</th><th class="num">сжатие</th><th class="num">время</th></tr></thead><tbody><tr><td><code>G01-s1</code></td><td>split</td><td class="num">1</td><td class="num">25 619</td><td class="num">20.1</td><td class="num">4.49</td><td class="num">0.006</td><td class="num">9.8 с</td></tr><tr><td><code>G01-s2</code></td><td>split</td><td class="num">2</td><td class="num">25 931</td><td class="num">20.0</td><td class="num">4.47</td><td class="num">0.006</td><td class="num">9.7 с</td></tr><tr><td><code>G01-s3</code></td><td>split</td><td class="num">3</td><td class="num">25 571</td><td class="num">20.3</td><td class="num">4.58</td><td class="num">0.006</td><td class="num">10.1 с</td></tr><tr><td><code>G02-s1</code></td><td>rot</td><td class="num">1</td><td class="num">25 343</td><td class="num">19.3</td><td class="num">4.37</td><td class="num">0.006</td><td class="num">17.6 с</td></tr><tr><td><code>G02-s2</code></td><td>rot</td><td class="num">2</td><td class="num">25 076</td><td class="num">19.3</td><td class="num">4.29</td><td class="num">0.006</td><td class="num">17.3 с</td></tr><tr><td><code>G02-s3</code></td><td>rot</td><td class="num">3</td><td class="num">24 982</td><td class="num">19.1</td><td class="num">4.36</td><td class="num">0.006</td><td class="num">17.2 с</td></tr><tr><td><code>G03-s1</code></td><td>swap</td><td class="num">1</td><td class="num">142 527</td><td class="num">38.2</td><td class="num">3.56</td><td class="num">0.019</td><td class="num">14.4 с</td></tr><tr><td><code>G03-s2</code></td><td>swap</td><td class="num">2</td><td class="num">142 694</td><td class="num">38.2</td><td class="num">3.56</td><td class="num">0.019</td><td class="num">13.6 с</td></tr><tr><td><code>G03-s3</code></td><td>swap</td><td class="num">3</td><td class="num">143 218</td><td class="num">38.3</td><td class="num">3.56</td><td class="num">0.019</td><td class="num">13.5 с</td></tr><tr><td><code>G04-s1</code></td><td>weights</td><td class="num">1</td><td class="num">30 724</td><td class="num">21.4</td><td class="num">4.48</td><td class="num">0.007</td><td class="num">12.0 с</td></tr><tr><td><code>G04-s2</code></td><td>weights</td><td class="num">2</td><td class="num">30 361</td><td class="num">21.0</td><td class="num">4.54</td><td class="num">0.007</td><td class="num">13.3 с</td></tr><tr><td><code>G04-s3</code></td><td>weights</td><td class="num">3</td><td class="num">29 978</td><td class="num">21.3</td><td class="num">4.61</td><td class="num">0.007</td><td class="num">14.1 с</td></tr></tbody></table></div>
+<div class="gallery"><figure><img loading="lazy" src="../results/ca3d4/p4g_split.png" alt="G01: три случайных направления на клетку — ветвящееся облако."><figcaption><b>Рис. 3.1.</b> G01: три случайных направления на клетку — ветвящееся облако.</figcaption></figure><figure><img loading="lazy" src="../results/ca3d4/p4g_rot.png" alt="G02: случайный поворот радиальных весов — «закрученная» оболочка."><figcaption><b>Рис. 3.2.</b> G02: случайный поворот радиальных весов — «закрученная» оболочка.</figcaption></figure><figure><img loading="lazy" src="../results/ca3d4/p4g_swap.png" alt="G03: радиальный поток + случайный обмен."><figcaption><b>Рис. 3.3.</b> G03: радиальный поток + случайный обмен.</figcaption></figure><figure><img loading="lazy" src="../results/ca3d4/p4g_weights.png" alt="G04: случайные целые веса 0..2 — рыхлое облако."><figcaption><b>Рис. 3.4.</b> G04: случайные целые веса 0..2 — рыхлое облако.</figcaption></figure><figure><img loading="lazy" src="../results/ca3d4/p4g_dice.png" alt="«Кости»: одно правило split, три сида. Крупные черты похожи, детали и число активных клеток — разные."><figcaption><b>Рис. 3.5.</b> «Кости»: одно правило split, три сида. Крупные черты похожи, детали и число активных клеток — разные.</figcaption></figure></div>
+<p class="small muted">Три сида одного правила дают разные детали, но при 16 млн бит крупные черты (радиус, оболочка) устойчивы: случайность меняет микроструктуру, а не закон сохранения. Разброс по числу активных клеток и фронту — в таблице.</p>
+</section>
+
+<section>
+<h2><span class="num">04</span> Что видно</h2>
+<ul>
+  <li><b>Радиальный поток</b> собирает биты в оболочку/лобастый шар; <code>K</code> оставляет плотное ядро и гало.</li>
+  <li><b>Обмен</b> меняет внутреннюю текстуру и немного расширяет фронт, не меняя сумму.</li>
+  <li><b>Случайность</b> не создаёт биты, но меняет форму: три сида одного правила — три разных мира.</li>
+  <li><b>Плотных блобов нет</b>: 16 млн бит на растущий объём дают именно облако/оболочку, а не твёрдое тело. Это следствие сохранения.</li>
+</ul>
+</section>
+
+<section>
+<h2><span class="num">05</span> Проверки</h2>
+<div class="tablewrap"><table><thead><tr><th>Проверка</th><th>Статус</th><th>Значение</th></tr></thead><tbody><tr><td>12 правил прогнаны</td><td><span class="tag ok">PASS</span></td><td class="num small">12</td></tr><tr><td>сумма бит сохраняется во всех правилах</td><td><span class="tag ok">PASS</span></td><td class="num small">{&#x27;start&#x27;: 16000000, &#x27;ends&#x27;: [16000000]}</td></tr><tr><td>фронт не обгоняет c·t</td><td><span class="tag ok">PASS</span></td><td class="num small">39.6</td></tr><tr><td>есть разные морфологии</td><td><span class="tag ok">PASS</span></td><td class="num small">[&#x27;облако&#x27;, &#x27;радиальная оболочка&#x27;, &#x27;ядро+гало&#x27;]</td></tr><tr><td>активных клеток меньше объёма</td><td><span class="tag ok">PASS</span></td><td class="num small">0.038</td></tr><tr><td>картинки созданы</td><td><span class="tag ok">PASS</span></td><td class="num small">5</td></tr><tr><td>12 стохастических прогонов</td><td><span class="tag ok">PASS</span></td><td class="num small">12</td></tr><tr><td>сумма бит сохраняется во всех</td><td><span class="tag ok">PASS</span></td><td class="num small">[16000000]</td></tr><tr><td>фронт не обгоняет c·t</td><td><span class="tag ok">PASS</span></td><td class="num small">38.3</td></tr><tr><td>разные сиды дают разные картины</td><td><span class="tag ok">PASS</span></td><td class="num small">[[25619, 20.1], [25931, 20.0], [25571, 20.3]]</td></tr><tr><td>картинки созданы</td><td><span class="tag ok">PASS</span></td><td class="num small">4</td></tr></tbody></table></div>
+</section>
+
+<section>
+<h2><span class="num">06</span> Файлы и запуск</h2>
+<div class="kv">
+  <div>движок</div><div><code>src/ca3d_cloud.py</code> — доли, обмен, случайные режимы</div>
+  <div>детерминированные</div><div><code>scripts/run_ca3d4.py</code> — 12 правил, <code>report.json</code></div>
+  <div>случайные</div><div><code>scripts/run_ca3d4_god.py</code> — 12 прогонов, <code>god.json</code></div>
+  <div>этот отчёт</div><div><code>scripts/build_ca3d4_report.py</code></div>
+</div>
+<div class="formula">python scripts/run_ca3d4.py       # ~90 с
+python scripts/run_ca3d4_god.py   # ~3 мин
+python scripts/build_ca3d4_report.py</div>
+<p>Части 1–3: <a href="ca3d.html">инфляционная решётка</a>, <a href="ca3d2.html">сети и блобы</a>, <a href="ca3d3.html">консервативный битовый автомат</a>.</p>
+</section>
+
+<footer>ogamespec/atom · issue #1 · часть 4 · сгенерировано 2026-11-16 22:46:29 · Python 3.14.4</footer>
+</div>
+</body>
+</html>
