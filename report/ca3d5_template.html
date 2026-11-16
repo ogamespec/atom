@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Кулоновское правило: заряд, поле и доменная сетка — часть 5</title>
+<style>
+:root{--bg:#070a10;--ink:#dce6f4;--muted:#8ea2bd;--acc:#ffb454;--acc2:#7cc4ff;--line:#1d2a3b;--mono:"SFMono-Regular",Consolas,monospace}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(1000px 500px at 15% -10%,#1a2436,transparent 60%),var(--bg);color:var(--ink);font:16px/1.65 "Inter","Segoe UI",Arial,sans-serif}
+a{color:var(--acc2);text-decoration:none}a:hover{text-decoration:underline}
+.wrap{max-width:1120px;margin:0 auto;padding:0 26px 80px}
+header{padding:56px 0 26px;border-bottom:1px solid var(--line);margin-bottom:30px}
+.kicker{color:var(--acc);font-size:12.5px;letter-spacing:.18em;text-transform:uppercase;font-weight:700}
+h1{font-size:clamp(30px,4.2vw,52px);line-height:1.1;margin:.3em 0 .25em;letter-spacing:-.02em}
+h1 .thin{color:var(--muted);font-weight:400}
+.lead{font-size:18px;color:#b9c7da;max-width:900px}
+.badges{display:flex;flex-wrap:wrap;gap:8px;margin-top:20px}
+.badge{font:12px var(--mono);padding:8px 11px;border:1px solid var(--line);border-radius:999px;color:var(--muted);background:#0b1119}.badge b{color:var(--ink)}
+section{margin:0 0 46px}
+h2{font-size:27px;margin:0 0 12px;display:flex;gap:12px;align-items:baseline}
+h2 .num{font:12.5px var(--mono);color:var(--acc);border:1px solid #3a2a17;background:#1a1208;padding:4px 8px;border-radius:6px}
+h3{font-size:19px;margin:26px 0 8px}
+p{margin:0 0 14px}ul,ol{padding-left:24px;margin:0 0 16px}li{margin:5px 0}
+.muted{color:var(--muted)}.small{font-size:13.5px}
+code{font-family:var(--mono);font-size:.9em;background:#101a27;border:1px solid var(--line);border-radius:5px;padding:2px 5px;color:#ffd9a3}
+.formula{font-family:var(--mono);font-size:14px;background:#0b121c;border:1px solid var(--line);border-left:3px solid var(--acc);border-radius:8px;padding:12px 14px;margin:12px 0 18px;overflow-x:auto}
+.note{background:#0d1622;border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin:18px 0;color:#c3d1e3}.note b{color:var(--acc)}
+figure{margin:22px 0;background:#0a1018;border:1px solid var(--line);border-radius:12px;padding:10px}
+figure img{width:100%;height:auto;border-radius:7px;background:#000;display:block}
+figcaption{font-size:13.5px;color:var(--muted);padding:9px 6px 2px}figcaption b{color:#d6e3f4}
+.tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:10px;margin:14px 0 20px;background:#0a1018}
+table{border-collapse:collapse;width:100%;font-size:13px}
+th,td{padding:8px 10px;border-bottom:1px solid #16202d;text-align:left;vertical-align:top}
+th{background:#101927;color:#9fb3cc;font-size:11.5px;text-transform:uppercase;letter-spacing:.03em;white-space:nowrap}
+tr:last-child td{border-bottom:none}tbody tr:hover{background:#0f1824}
+td.num,th.num{text-align:right;font-family:var(--mono);font-size:12px;white-space:nowrap}
+.tag{font:11.5px var(--mono);padding:4px 7px;border-radius:5px;border:1px solid var(--line);color:#a9bcd4;background:#0d1521}
+.tag.ok{color:#9ff0c5;border-color:#1d3b2e;background:#0a1a13}.tag.no{color:#ffb3b3;border-color:#3b1d1d;background:#1a0d0d}
+.gallery{display:grid;grid-template-columns:repeat(auto-fit,minmax(330px,1fr));gap:16px}
+.gallery figure{margin:0}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:6px 16px;font-size:13.5px}.kv div:nth-child(odd){color:var(--muted)}
+footer{border-top:1px solid var(--line);padding-top:20px;color:var(--muted);font-size:13px;margin-top:40px}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <div class="kicker">ogamespec/atom · issue #1 · часть 5</div>
+  <h1>Заряд, поле и доменная сетка<br><span class="thin">кулоновское правило для битов</span></h1>
+  <p class="lead">Два сорта бит — <b>p (+1)</b> и <b>n (−1)</b>. Поле φ считается из зарядовой плотности решением уравнения Пуассона; p дрейфует вниз по φ, n — вверх. Получаются <b>блобы</b>, <b>доменная сетка</b> внутри блоба и сила, близкая к <b>1/r²</b>. Это честная попытка найти одно правило со всеми тремя свойствами — с оговорками, которые важнее красоты картинки.</p>
+  <div class="badges">
+    <span class="badge">бит: <b>16 000 000</b></span>
+    <span class="badge">заряды: <b>p / n</b></span>
+    <span class="badge">сила: <b>{{F_SLOPE}}</b></span>
+    <span class="badge">потенциал: <b>{{PHI_SLOPE}}</b></span>
+    <span class="badge">проверок: <b>{{N_CHECKS}}</b></span>
+  </div>
+</header>
+
+<section>
+<h2><span class="num">01</span> Правило</h2>
+<p>Клетка хранит два счётчика: <code>p</code> и <code>n</code>. Их сумма сохраняется. Зарядовая плотность <code>ρ = (p − n)/N</code>; поле — решёточное решение <code>∇²φ = −ρ</code> (FFT). Затем клетка делит p и n по шести направлениям с весами</p>
+<div class="formula">w<sub>p,d</sub> = 1 + β·6·(φ(x) − φ(x+e<sub>d</sub>)) + γ·6·(ρ<sub>m</sub>(x) − ρ<sub>m</sub>(x+e<sub>d</sub>))<br>
+w<sub>n,d</sub> = 1 − β·6·(φ(x) − φ(x+e<sub>d</sub>)) + γ·6·(ρ<sub>m</sub>(x) − ρ<sub>m</sub>(x+e<sub>d</sub>))</div>
+<p>β — сила кулоновского дрейфа, γ — короткодействующее притяжение к плотности (обменное). Доли целочисленные, остаток остаётся в клетке; p и n сохраняются по отдельности. Обмен p↔p и n↔n между соседями добавляет перемешивание.</p>
+<div class="note"><b>Важная оговорка.</b> Поле считается FFT-решением Пуассона — это <b>не строго локальное</b> правило, а mean-field. Обмен без поля только схлопывает заряды в блоб и не даёт 1/r. Поле — и есть тот «хинт»: для кулоновского взаимодействия нужен носитель дальнодействия, одного обмена мало.</div>
+</section>
+
+<section>
+<h2><span class="num">02</span> Кулон: потенциал и сила</h2>
+<p>Один положительный заряд в центре, 16 млн бит. Радиальные профили φ(r) и |F| = |−dφ/dr| в лог-лог масштабе:</p>
+<figure><img src="../results/ca3d5/p5_coulomb.png" alt="Кулоновские профили"><figcaption><b>Рис. 1.</b> Сила даёт наклон <b>{{F_SLOPE}}</b> — почти точный 1/r². Потенциал даёт <b>{{PHI_SLOPE}}</b>: дискретная решётка и усреднение по сферам делают его круче идеального 1/r. Это «подобие», а не аналитический закон.</figcaption></figure>
+<p>Проверка честная: критерий <code>−1 ± 0.2</code> для потенциала не выполнен ({{PHI_STATUS}}), критерий <code>−2 ± 0.35</code> для силы выполнен. Именно сила — то, что действует на биты, и она кулоновская.</p>
+</section>
+
+<section>
+<h2><span class="num">03</span> Блобы и доменная сетка</h2>
+<p>Зародыш — компактный блок 5³ с чередующимися знаками (шахматка). Кулоновское притяжение сжимает его в блоб, но внутри сохраняется <b>решётка чередующихся зарядов</b> — доменная сетка. На срезах видны полосы +/−; это и есть «сетеподобная» структура, хотя и не разреженный филаментный каркас.</p>
+{{RUNS_TABLE}}
+<div class="gallery">
+{{GALLERY}}
+</div>
+<div class="note"><b>Что именно найдено.</b> Блобы — да (blob ≈ 0.93). Доменная сетка — да, но она <b>внутри блоба</b> и coarsens со временем (стенки 0.4–0.6% объёма, wall network ≈ 0.55). Устойчивой разреженной сети из филаментов это правило не даёт: кулоновское притяжение побеждает и стягивает всё в блоб.</div>
+</section>
+
+<section>
+<h2><span class="num">04</span> Вывод и следующий шаг</h2>
+<ul>
+  <li><b>Кулоновская сила</b> воспроизводится: F ~ r<sup>{{F_SLOPE}}</sup>.</li>
+  <li><b>Блобы</b> устойчивы: диполь и квадруполь сжимаются в компактные капли.</li>
+  <li><b>Сеть</b> есть как доменная решётка, но не как разреженный каркас.</li>
+  <li>Чтобы получить устойчивую разреженную сеть, нужно добавить <b>короткодействующее отталкивание</b> (несжимаемость/Pauli), которое не даст домену схлопнуться: тогда стенки доменов смогут образовать foam-сеть, а кулоновское поле будет дальнодействием между узлами.</li>
+</ul>
+<p>Это согласуется с интуицией: обменное взаимодействие даёт ближний порядок и блобы, а кулоновское поле — дальнодействие; для сети нужны оба масштаба и третий — жёсткость, запрещающая коллапс.</p>
+</section>
+
+<section>
+<h2><span class="num">05</span> Проверки</h2>
+<div class="tablewrap">{{CHECKS}}</div>
+</section>
+
+<section>
+<h2><span class="num">06</span> Файлы и запуск</h2>
+<div class="kv">
+  <div>движок</div><div><code>src/ca3d_coulomb.py</code> — p/n, Пуассон, дрейф, обмен</div>
+  <div>эксперимент</div><div><code>scripts/run_ca3d5.py</code> — 6 прогонов, <code>results/ca3d5/report.json</code></div>
+  <div>этот отчёт</div><div><code>scripts/build_ca3d5_report.py</code></div>
+</div>
+<div class="formula">python scripts/run_ca3d5.py          # ~15 с
+python scripts/build_ca3d5_report.py</div>
+<p>Части 1–4: <a href="ca3d.html">инфляционная решётка</a>, <a href="ca3d2.html">сети и блобы</a>, <a href="ca3d3.html">консервативный битовый автомат</a>, <a href="ca3d4.html">16 млн бит, обмен и кости</a>.</p>
+</section>
+
+<footer>ogamespec/atom · issue #1 · часть 5 · сгенерировано {{GENERATED}} · Python {{PYTHON}}</footer>
+</div>
+</body>
+</html>
