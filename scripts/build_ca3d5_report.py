@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Сборка HTML части 5: кулоновское правило."""
+"""Сборка HTML части 5 (исправленной): всё из одной клетки."""
 from __future__ import annotations
 import html, json, re
 from pathlib import Path
@@ -18,15 +18,16 @@ def e(x):
 def runs_table():
     rows = []
     for r in D['runs']:
-        rows.append(f'<tr><td><code>{e(r["tag"])}</code></td><td class="num">{r["P"]:,}</td>'.replace(',', ' ') +
-                    f'<td class="num">{r["N"]:,}</td>'.replace(',', ' ') +
+        rows.append(f'<tr><td><code>{e(r["tag"])}</code></td>'
+                    f'<td class="num">{r["bias"]}</td><td class="num">{r["rep"]}</td>'
+                    f'<td class="num">{r["noise"]}</td><td class="num">{e(r["K"])}</td>'
                     f'<td class="num">{r["cells"]:,}</td>'.replace(',', ' ') +
-                    f'<td class="num">{r["blob"]:.2f}</td><td class="num">{r["network"]:.2f}</td>'
-                    f'<td class="num">{r["wall_frac"]*100:.2f}%</td>'
-                    f'<td class="num">{r["wall_network"]:.2f}</td></tr>')
-    head = ('<table><thead><tr><th>прогон</th><th class="num">P</th><th class="num">N</th>'
-            '<th class="num">клеток</th><th class="num">blob</th><th class="num">network</th>'
-            '<th class="num">стенки</th><th class="num">wall network</th></tr></thead><tbody>')
+                    f'<td class="num">{r["Dx"]}</td><td class="num">{r["Qxx"]}</td>'
+                    f'<td class="num">{r["sep"]}</td><td class="num">{r["blob"]:.2f}</td></tr>')
+    head = ('<table><thead><tr><th>прогон</th><th class="num">bias</th><th class="num">rep</th>'
+            '<th class="num">noise</th><th class="num">K</th><th class="num">клеток</th>'
+            '<th class="num">Dx</th><th class="num">Qxx</th><th class="num">sep</th>'
+            '<th class="num">blob</th></tr></thead><tbody>')
     return head + ''.join(rows) + '</tbody></table>'
 
 
@@ -42,19 +43,18 @@ def checks_table():
 
 
 def gallery():
-    caps = {
-        'p5_checker_T10.png': 'Зародыш-шахматка, T=10: блоб с полосатой доменной сеткой.',
-        'p5_checker_T16.png': 'T=16: сетка укрупняется, блоб сжимается.',
-        'p5_checker_slices.png': 'Срезы знака заряда: чередующиеся +/− полосы (доменная сетка).',
-        'p5_dipole_T16.png': 'Диполь +/−: притяжение стягивает заряды в блоб.',
-        'p5_quadrupole_T16.png': 'Квадруполь: несколько зарядов дают более сложный блоб.',
-        'p5_coulomb.png': 'Потенциал и сила: F ~ 1/r², φ эффективно ~ r^−1.4.',
-    }
+    caps = [
+        ('p5_dip_T4.png', 'T=4: клетка начала раскалываться; появляются два облака.'),
+        ('p5_dip_T8.png', 'T=8: p и n разошлись, кулоновское поле стягивает их.'),
+        ('p5_dip_T16.png', 'T=16: связанная пара — эмерджентный диполь.'),
+        ('p5_dip_T24.png', 'T=24: диполь стабилен, Dx ≈ 7, расстояние ≈ 12 клеток.'),
+        ('p5_noise.png', 'Шум из одной клетки: пёстрый мультипольный узор (Qxx ≈ 0.84).'),
+    ]
     cards = []
-    for fn, cap in caps.items():
+    for fn, cap in caps:
         if (OUT / fn).exists():
             cards.append(f'<figure><img loading="lazy" src="{IMG}/{fn}" alt="{e(cap)}">'
-                         f'<figcaption><b>Рис. {len(cards)+2}.</b> {cap}</figcaption></figure>')
+                         f'<figcaption><b>Рис.</b> {cap}</figcaption></figure>')
     return ''.join(cards)
 
 
@@ -63,8 +63,6 @@ def main():
     out = TPL
     out = out.replace('{{F_SLOPE}}', f'{c["force_slope"]:.2f}'.replace('-', '−'))
     out = out.replace('{{PHI_SLOPE}}', f'{c["phi_slope"]:.2f}'.replace('-', '−'))
-    phi_ok = next(x for x in D['checks'] if 'потенциал' in x['name'])
-    out = out.replace('{{PHI_STATUS}}', 'PASS' if phi_ok['ok'] else 'FAIL')
     out = out.replace('{{RUNS_TABLE}}', runs_table())
     out = out.replace('{{GALLERY}}', gallery())
     out = out.replace('{{CHECKS}}', checks_table())

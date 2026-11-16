@@ -110,19 +110,35 @@ def _split(a, w, K=None):
     return out
 
 
-def step(p, n, beta=1.0, K=None, exchange=False, gamma=0.0):
+def step(p, n, beta=1.0, K=None, exchange=False, gamma=0.0,
+         bias=0.0, rep=0.0, noise=0.0, rng=None):
     N = max(int(p.sum() + n.sum()), 1)
     rho = (p.astype(np.float32) - n.astype(np.float32)) / N
     phi = poisson(rho)
     # веса: p — вниз по φ, n — вверх
     dens = (p + n).astype(np.float32) / N
+    pdens = p.astype(np.float32) / N
+    ndens = n.astype(np.float32) / N
+    if rng is None:
+        rng = np.random.default_rng(0)
     wp = []
     wn = []
     for d in range(6):
         dphi = phi - np.roll(phi, DIRS[d], axis=(0, 1, 2))
         dd = dens - np.roll(dens, DIRS[d], axis=(0, 1, 2))
-        wp.append(np.clip(1.0 + beta * 6.0 * dphi + gamma * 6.0 * dd, 0.0, None))
-        wn.append(np.clip(1.0 - beta * 6.0 * dphi + gamma * 6.0 * dd, 0.0, None))
+        bd = 1.0 if d == 0 else (-1.0 if d == 1 else 0.0)
+        rp = rng.integers(-1, 2, phi.shape) if noise > 0 else 0
+        rn = rng.integers(-1, 2, phi.shape) if noise > 0 else 0
+        wpp = np.clip(1.0 + beta * 6.0 * dphi + gamma * 6.0 * dd
+                      + bias * 3.0 * bd
+                      + rep * 6.0 * (ndens - np.roll(ndens, DIRS[d], axis=(0, 1, 2)))
+                      + noise * rp, 0.0, None)
+        wnn = np.clip(1.0 - beta * 6.0 * dphi + gamma * 6.0 * dd
+                      - bias * 3.0 * bd
+                      + rep * 6.0 * (pdens - np.roll(pdens, DIRS[d], axis=(0, 1, 2)))
+                      + noise * rn, 0.0, None)
+        wp.append(wpp)
+        wn.append(wnn)
     # добавляем «стоячую» долю 1 и переводим веса в целые
     wp.append(np.ones_like(phi)); wn.append(np.ones_like(phi))
     wp = [np.maximum(1, np.rint(w * 100)).astype(np.int64) for w in wp]
@@ -153,6 +169,23 @@ def step(p, n, beta=1.0, K=None, exchange=False, gamma=0.0):
         p2[left] = pn; p2[right] = pn2
         n2[left] = nn; n2[right] = nn2
     return p2, n2, phi
+
+
+def run_one(L=97, T=32, N=16_000_000, beta=1.0, K=None, exchange=False,
+            gamma=0.0, bias=0.0, rep=0.0, noise=0.0, seed_num=1):
+    """Зародыш — ОДНА клетка: p=n=N/2. Всё остальное — эволюция правила."""
+    p = np.zeros((L, L, L), np.int64)
+    n = np.zeros_like(p)
+    c = L // 2
+    p[c, c, c] = N // 2
+    n[c, c, c] = N - N // 2
+    rng = np.random.default_rng(seed_num)
+    hist = [(0, int(p.sum()), int(n.sum()))]
+    phi = np.zeros((L, L, L), np.float32)
+    for _ in range(T):
+        p, n, phi = step(p, n, beta, K, exchange, gamma, bias, rep, noise, rng)
+        hist.append((len(hist), int(p.sum()), int(n.sum())))
+    return p, n, phi, hist
 
 
 def run(L=97, T=32, N=16_000_000, seed='neutral', beta=1.0, K=None,

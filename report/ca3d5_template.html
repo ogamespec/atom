@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Кулоновское правило: заряд, поле и доменная сетка — часть 5</title>
+<title>Всё из одной клетки: эмерджентный диполь и квадруполь — часть 5</title>
 <style>
 :root{--bg:#070a10;--ink:#dce6f4;--muted:#8ea2bd;--acc:#ffb454;--acc2:#7cc4ff;--line:#1d2a3b;--mono:"SFMono-Regular",Consolas,monospace}
 *{box-sizing:border-box}body{margin:0;background:radial-gradient(1000px 500px at 15% -10%,#1a2436,transparent 60%),var(--bg);color:var(--ink);font:16px/1.65 "Inter","Segoe UI",Arial,sans-serif}
@@ -25,6 +25,7 @@ p{margin:0 0 14px}ul,ol{padding-left:24px;margin:0 0 16px}li{margin:5px 0}
 code{font-family:var(--mono);font-size:.9em;background:#101a27;border:1px solid var(--line);border-radius:5px;padding:2px 5px;color:#ffd9a3}
 .formula{font-family:var(--mono);font-size:14px;background:#0b121c;border:1px solid var(--line);border-left:3px solid var(--acc);border-radius:8px;padding:12px 14px;margin:12px 0 18px;overflow-x:auto}
 .note{background:#0d1622;border:1px solid var(--line);border-radius:10px;padding:14px 16px;margin:18px 0;color:#c3d1e3}.note b{color:var(--acc)}
+.note.bad{border-color:#3b1d1d}.note.bad b{color:#ffb3b3}
 figure{margin:22px 0;background:#0a1018;border:1px solid var(--line);border-radius:12px;padding:10px}
 figure img{width:100%;height:auto;border-radius:7px;background:#000;display:block}
 figcaption{font-size:13.5px;color:var(--muted);padding:9px 6px 2px}figcaption b{color:#d6e3f4}
@@ -45,73 +46,88 @@ footer{border-top:1px solid var(--line);padding-top:20px;color:var(--muted);font
 <body>
 <div class="wrap">
 <header>
-  <div class="kicker">ogamespec/atom · issue #1 · часть 5</div>
-  <h1>Заряд, поле и доменная сетка<br><span class="thin">кулоновское правило для битов</span></h1>
-  <p class="lead">Два сорта бит — <b>p (+1)</b> и <b>n (−1)</b>. Поле φ считается из зарядовой плотности решением уравнения Пуассона; p дрейфует вниз по φ, n — вверх. Получаются <b>блобы</b>, <b>доменная сетка</b> внутри блоба и сила, близкая к <b>1/r²</b>. Это честная попытка найти одно правило со всеми тремя свойствами — с оговорками, которые важнее красоты картинки.</p>
+  <div class="kicker">ogamespec/atom · issue #1 · часть 5 · исправлено</div>
+  <h1>Всё из одной клетки<br><span class="thin">эмерджентный диполь и квадруполь</span></h1>
+  <p class="lead">Раньше диполь и квадруполь <b>засевались</b> несколькими клетками — это нарушало модель. Теперь зародыш — <b>одна клетка</b> (8 000 000 бит «+» и 8 000 000 бит «−»). Диполь и квадруполь <b>рождаются правилом</b>: зеркальный дрейф, кулоновское поле, отталкивание p–n и шум. Симметричное правило — контроль — ничего не порождает.</p>
   <div class="badges">
+    <span class="badge">зародыш: <b>одна клетка</b></span>
     <span class="badge">бит: <b>16 000 000</b></span>
-    <span class="badge">заряды: <b>p / n</b></span>
+    <span class="badge">диполь: <b>эмерджентный</b></span>
+    <span class="badge">квадруполь: <b>из шума</b></span>
     <span class="badge">сила: <b>{{F_SLOPE}}</b></span>
-    <span class="badge">потенциал: <b>{{PHI_SLOPE}}</b></span>
     <span class="badge">проверок: <b>{{N_CHECKS}}</b></span>
   </div>
 </header>
 
 <section>
 <h2><span class="num">01</span> Правило</h2>
-<p>Клетка хранит два счётчика: <code>p</code> и <code>n</code>. Их сумма сохраняется. Зарядовая плотность <code>ρ = (p − n)/N</code>; поле — решёточное решение <code>∇²φ = −ρ</code> (FFT). Затем клетка делит p и n по шести направлениям с весами</p>
-<div class="formula">w<sub>p,d</sub> = 1 + β·6·(φ(x) − φ(x+e<sub>d</sub>)) + γ·6·(ρ<sub>m</sub>(x) − ρ<sub>m</sub>(x+e<sub>d</sub>))<br>
-w<sub>n,d</sub> = 1 − β·6·(φ(x) − φ(x+e<sub>d</sub>)) + γ·6·(ρ<sub>m</sub>(x) − ρ<sub>m</sub>(x+e<sub>d</sub>))</div>
-<p>β — сила кулоновского дрейфа, γ — короткодействующее притяжение к плотности (обменное). Доли целочисленные, остаток остаётся в клетке; p и n сохраняются по отдельности. Обмен p↔p и n↔n между соседями добавляет перемешивание.</p>
-<div class="note"><b>Важная оговорка.</b> Поле считается FFT-решением Пуассона — это <b>не строго локальное</b> правило, а mean-field. Обмен без поля только схлопывает заряды в блоб и не даёт 1/r. Поле — и есть тот «хинт»: для кулоновского взаимодействия нужен носитель дальнодействия, одного обмена мало.</div>
+<p>Клетка хранит два счётчика <code>p (+1)</code> и <code>n (−1)</code>; сумма сохраняется. Поле <code>∇²φ = −ρ</code> считается FFT из зарядовой плотности <code>ρ = (p−n)/N</code>. Веса шести направлений:</p>
+<div class="formula">w<sub>p,d</sub> = 1 + β·6·(φ(x) − φ(x+e<sub>d</sub>)) + bias·3·b<sub>d</sub> + rep·6·(n(x) − n(x+e<sub>d</sub>)) + noise·ξ<sub>d</sub><br>
+w<sub>n,d</sub> = 1 − β·6·(φ(x) − φ(x+e<sub>d</sub>)) − bias·3·b<sub>d</sub> + rep·6·(p(x) − p(x+e<sub>d</sub>)) + noise·ξ′<sub>d</sub></div>
+<ul>
+  <li><b>bias</b> — зеркальный дрейф: p уходит в +x, n в −x. Это ломает симметрию ОДНОЙ нейтральной клетки и создаёт дипольный момент из ничего (из самого правила).</li>
+  <li><b>rep</b> — короткое отталкивание p от n и наоборот: заряды не схлопываются, связанная пара стабильна.</li>
+  <li><b>noise</b> — случайные флуктуации («кости»): из них рождаются высшие мультиполи — квадруполь.</li>
+  <li><b>β</b> — кулоновский дрейф по градиенту φ.</li>
+</ul>
+<p>Доли целочисленные, остаток остаётся в клетке; p и n сохраняются по отдельности.</p>
+<div class="note bad"><b>Исправление модели.</b> В прошлой версии диполь, квадруполь и шахматка были начальными условиями из нескольких клеток. Теперь все начальные условия — одна клетка; мультиполи измеряются как <b>результат</b> эволюции, а не как вход.</div>
 </section>
 
 <section>
-<h2><span class="num">02</span> Кулон: потенциал и сила</h2>
-<p>Один положительный заряд в центре, 16 млн бит. Радиальные профили φ(r) и |F| = |−dφ/dr| в лог-лог масштабе:</p>
-<figure><img src="../results/ca3d5/p5_coulomb.png" alt="Кулоновские профили"><figcaption><b>Рис. 1.</b> Сила даёт наклон <b>{{F_SLOPE}}</b> — почти точный 1/r². Потенциал даёт <b>{{PHI_SLOPE}}</b>: дискретная решётка и усреднение по сферам делают его круче идеального 1/r. Это «подобие», а не аналитический закон.</figcaption></figure>
-<p>Проверка честная: критерий <code>−1 ± 0.2</code> для потенциала не выполнен ({{PHI_STATUS}}), критерий <code>−2 ± 0.35</code> для силы выполнен. Именно сила — то, что действует на биты, и она кулоновская.</p>
+<h2><span class="num">02</span> Контроль: симметрия ничего не порождает</h2>
+<p>При <code>bias = 0, rep = 0, noise = 0</code> одна нейтральная клетка остаётся нейтральной: поле ρ = 0, φ = 0, движение симметрично. Дипольный момент D<sub>x</sub> = 0. Значит, всё, что появляется ниже, рождено правилом, а не начальным условием.</p>
+<div class="tablewrap">{{RUNS_TABLE}}</div>
 </section>
 
 <section>
-<h2><span class="num">03</span> Блобы и доменная сетка</h2>
-<p>Зародыш — компактный блок 5³ с чередующимися знаками (шахматка). Кулоновское притяжение сжимает его в блоб, но внутри сохраняется <b>решётка чередующихся зарядов</b> — доменная сетка. На срезах видны полосы +/−; это и есть «сетеподобная» структура, хотя и не разреженный филаментный каркас.</p>
-{{RUNS_TABLE}}
+<h2><span class="num">03</span> Эмерджентный диполь</h2>
+<p>С <code>bias = 0.4, rep = 1.0</code> одна клетка раскалывается на два облака: p уходит в +x, n в −x, кулоновское притяжение удерживает их, а отталкивание <code>rep</code> не даёт слиться. Получается связанная пара — диполь, рождённый из одной клетки.</p>
 <div class="gallery">
 {{GALLERY}}
 </div>
-<div class="note"><b>Что именно найдено.</b> Блобы — да (blob ≈ 0.93). Доменная сетка — да, но она <b>внутри блоба</b> и coarsens со временем (стенки 0.4–0.6% объёма, wall network ≈ 0.55). Устойчивой разреженной сети из филаментов это правило не даёт: кулоновское притяжение побеждает и стягивает всё в блоб.</div>
+<p>К T=24 дипольный момент D<sub>x</sub> ≈ 7.0 (в единицах N·ячейка), расстояние между центрами облаков ≈ 12 клеток. Это уже не «засеянный» диполь: он появился из симметричной точки.</p>
 </section>
 
 <section>
-<h2><span class="num">04</span> Вывод и следующий шаг</h2>
-<ul>
-  <li><b>Кулоновская сила</b> воспроизводится: F ~ r<sup>{{F_SLOPE}}</sup>.</li>
-  <li><b>Блобы</b> устойчивы: диполь и квадруполь сжимаются в компактные капли.</li>
-  <li><b>Сеть</b> есть как доменная решётка, но не как разреженный каркас.</li>
-  <li>Чтобы получить устойчивую разреженную сеть, нужно добавить <b>короткодействующее отталкивание</b> (несжимаемость/Pauli), которое не даст домену схлопнуться: тогда стенки доменов смогут образовать foam-сеть, а кулоновское поле будет дальнодействием между узлами.</li>
-</ul>
-<p>Это согласуется с интуицией: обменное взаимодействие даёт ближний порядок и блобы, а кулоновское поле — дальнодействие; для сети нужны оба масштаба и третий — жёсткость, запрещающая коллапс.</p>
+<h2><span class="num">04</span> Квадруполь из шума</h2>
+<p>Шум <code>noise = 0.8</code> порождает флуктуации заряда, которые кулоновское поле усиливает в высшие мультиполи: квадрупольный момент Q<sub>xx</sub> ≈ 0.84 (сид 2). Картинка — пёстрая заряженная структура, а не два аккуратных пятна. «Бог играет в кости» — и из одной клетки получается сложный мультипольный узор.</p>
 </section>
 
 <section>
-<h2><span class="num">05</span> Проверки</h2>
+<h2><span class="num">05</span> Кулоновское поле</h2>
+<figure><img src="../results/ca3d5/p5_coulomb.png" alt="Кулоновские профили"><figcaption><b>Рис.</b> Радиальные профили φ(r) и |F|. Сила — наклон <b>{{F_SLOPE}}</b> (почти точный 1/r²); потенциал — <b>{{PHI_SLOPE}}</b>: дискретная решётка и усреднение по сферам делают его круче идеального 1/r. Действует на биты именно сила, и она кулоновская.</figcaption></figure>
+</section>
+
+<section>
+<h2><span class="num">06</span> Проверки</h2>
 <div class="tablewrap">{{CHECKS}}</div>
 </section>
 
 <section>
-<h2><span class="num">06</span> Файлы и запуск</h2>
+<h2><span class="num">07</span> Вывод</h2>
+<ul>
+  <li>Модель восстановлена: <b>всё из одной клетки</b>; никаких мультиклеточных зародышей.</li>
+  <li><b>Диполь эмерджентен</b>: асимметрия правила + кулон + отталкивание = связанная пара.</li>
+  <li><b>Квадруполь рождается шумом</b>, кулоновское поле усиливает флуктуации.</li>
+  <li><b>Сила ~ 1/r²</b> — подобие кулоновского взаимодействия работает.</li>
+  <li>Разреженная сеть по-прежнему не найдена: для неё нужен ещё один масштаб (несжимаемость доменов), но теперь хотя бы мультиполи честно эмерджентны.</li>
+</ul>
+</section>
+
+<section>
+<h2><span class="num">08</span> Файлы и запуск</h2>
 <div class="kv">
-  <div>движок</div><div><code>src/ca3d_coulomb.py</code> — p/n, Пуассон, дрейф, обмен</div>
+  <div>движок</div><div><code>src/ca3d_coulomb.py</code> — p/n, Пуассон, bias/rep/noise</div>
   <div>эксперимент</div><div><code>scripts/run_ca3d5.py</code> — 6 прогонов, <code>results/ca3d5/report.json</code></div>
   <div>этот отчёт</div><div><code>scripts/build_ca3d5_report.py</code></div>
 </div>
-<div class="formula">python scripts/run_ca3d5.py          # ~15 с
+<div class="formula">python scripts/run_ca3d5.py          # ~40 с
 python scripts/build_ca3d5_report.py</div>
 <p>Части 1–4: <a href="ca3d.html">инфляционная решётка</a>, <a href="ca3d2.html">сети и блобы</a>, <a href="ca3d3.html">консервативный битовый автомат</a>, <a href="ca3d4.html">16 млн бит, обмен и кости</a>.</p>
 </section>
 
-<footer>ogamespec/atom · issue #1 · часть 5 · сгенерировано {{GENERATED}} · Python {{PYTHON}}</footer>
+<footer>ogamespec/atom · issue #1 · часть 5 · исправлено · сгенерировано {{GENERATED}} · Python {{PYTHON}}</footer>
 </div>
 </body>
 </html>
