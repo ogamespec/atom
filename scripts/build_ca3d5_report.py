@@ -20,7 +20,7 @@ def runs_table():
     for r in D['runs']:
         rows.append(f'<tr><td><code>{e(r["tag"])}</code></td>'
                     f'<td class="num">{r["bias"]}</td><td class="num">{r["rep"]}</td>'
-                    f'<td class="num">{r["noise"]}</td><td class="num">{e(r["K"])}</td>'
+                    f'<td class="num">{r["noise"]}</td><td class="num">{e(r.get("K"))}</td>'
                     f'<td class="num">{r["cells"]:,}</td>'.replace(',', ' ') +
                     f'<td class="num">{r["Dx"]}</td><td class="num">{r["Qxx"]}</td>'
                     f'<td class="num">{r["sep"]}</td><td class="num">{r["blob"]:.2f}</td></tr>')
