@@ -1,0 +1,4 @@
+start T=10000 N=1000000 frac=0.500 mode=0 AP=0.00 RP=0.00 AN=0.00 RN=0.00 bias=0.50 noise=0.80 mob=100
+cp t=2500 active=199443 bits=1000000 front=889.00
+cp t=5000 active=449774 bits=1000000 front=1718.00
+cp t=7500 active=673664 bits=1000000 front=2526.00

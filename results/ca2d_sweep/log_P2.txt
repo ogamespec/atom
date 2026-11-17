@@ -1,0 +1,7 @@
+start T=10000 N=1000000 frac=0.500 mode=0 AP=-2.00 RP=0.00 AN=-2.00 RN=0.00 bias=0.00 noise=0.80 mob=50
+cp t=2500 active=12156 bits=1000000 front=63.01
+cp t=5000 active=20164 bits=1000000 front=81.22
+cp t=7500 active=26748 bits=1000000 front=93.38
+cp t=10000 active=32425 bits=1000000 front=102.62
+final t=10000 active=32425 bits=1000000 front=102.62
+wrote /mnt/c/Work/atom/results/ca2d_sweep/state_P2.bin count=32425
