@@ -27,7 +27,7 @@ static inline void add(Entry*t,uint32_t cap,uint32_t ep,uint32_t key,int64_t p,i
 static inline int rnd3(uint32_t key,uint32_t t,int d){uint32_t h=key^(t*0x9E3779B9U)^((uint32_t)(d+1)*0x85EBCA6BU);h^=h>>16;h*=0x7feb352dU;h^=h>>15;return (int)(h%3)-1;}
 static void checkpoint(const char*tag,uint32_t t){uint64_t bits=0;double front=0;for(size_t i=0;i<nact_n;i++){Entry*e=&cur[act[i]];bits+=(uint64_t)e->p+e->n;int x=dec_x(e->key),y=dec_y(e->key);double r=sqrt((double)x*x+(double)y*y);if(r>front)front=r;}printf("%s t=%u active=%zu bits=%llu front=%.2f\n",tag,t,nact_n,(unsigned long long)bits,front);fflush(stdout);}
 int main(int argc,char**argv){
- uint32_t T=atoi(argv[1]);NB=atoll(argv[2]);double frac=atof(argv[3]);MODE=atoi(argv[4]);AP=atof(argv[5]);RP=atof(argv[6]);AN=atof(argv[7]);RN=atof(argv[8]);BIAS=atof(argv[9]);NOISE=atof(argv[10]);MOB=atoi(argv[11]);const char*out=argv[12];
+ uint32_t T=atoi(argv[1]);NB=atoll(argv[2]);double frac=atof(argv[3]);MODE=atoi(argv[4]);AP=atof(argv[5]);RP=atof(argv[6]);AN=atof(argv[7]);RN=atof(argv[8]);BIAS=atof(argv[9]);NOISE=atof(argv[10]);MOB=atoi(argv[11]);const char*out=argv[12];int FE=argc>13?atoi(argv[13]):0;
  cur=calloc(CAP,sizeof(Entry));nxt=calloc(CAP,sizeof(Entry));act=malloc((size_t)MAXACT*4);nact=malloc((size_t)MAXACT*4);
  for(int i=0;i<NTH;i++){lt[i]=calloc(LCAP,sizeof(Entry));ll[i]=malloc((size_t)LMAX*4);}
  int64_t P=llround(NB*frac),Nn=NB-P;uint32_t k0=key_of(0,0),h=mix32(k0)&(CAP-1);cur[h].epoch=1;cur[h].key=k0;cur[h].p=P;cur[h].n=Nn;act[0]=h;nact_n=1;
@@ -58,6 +58,7 @@ int main(int argc,char**argv){
   for(int tid=0;tid<NTH;tid++)for(size_t i=0;i<lc[tid];i++){Entry*e=&lt[tid][ll[tid][i]];add(nxt,CAP,nep,e->key,e->p,e->n,nact,&nn,MAXACT);}
   Entry*tmp=cur;cur=nxt;nxt=tmp;uint32_t*ta=act;act=nact;nact=ta;nact_n=nn;epoch=nep;
   if(t%2500==0){checkpoint("cp",t);}
+  if(FE && t%FE==0){char fn[512];snprintf(fn,sizeof(fn),"%s.f%07u.bin",out,t);FILE*ff=fopen(fn,"wb");uint64_t cc=nact_n;fwrite(&cc,8,1,ff);for(size_t ii=0;ii<nact_n;ii++){Entry*ee=&cur[act[ii]];int32_t xx=dec_x(ee->key),yy=dec_y(ee->key);uint32_t pp=ee->p,nn2=ee->n;fwrite(&xx,4,1,ff);fwrite(&yy,4,1,ff);fwrite(&pp,4,1,ff);fwrite(&nn2,4,1,ff);}fclose(ff);}
  }
  checkpoint("final",T);
  FILE*f=fopen(out,"wb");uint64_t cnt=nact_n;fwrite(&cnt,8,1,f);

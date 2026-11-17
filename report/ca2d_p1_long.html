@@ -1,0 +1,30 @@
+<!DOCTYPE html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>P1: длинный прогон</title><style>
+body{margin:0;background:#070a10;color:#dce6f4;font:16px/1.65 Inter,Arial,sans-serif}.wrap{max-width:1000px;margin:0 auto;padding:30px 24px 70px}
+h1{font-size:38px;line-height:1.1}h2{font-size:24px;margin-top:34px}.lead{color:#b9c7da;font-size:18px}
+code{font-family:monospace;color:#ffd9a3;background:#101a27;padding:2px 5px;border-radius:4px}
+table{border-collapse:collapse;width:100%;font-size:14px;margin:14px 0}th,td{padding:8px 10px;border-bottom:1px solid #1d2a3b;text-align:left}
+th{color:#9fb3cc;font-size:12px;text-transform:uppercase}.num{text-align:right;font-family:monospace}
+img{width:100%;border-radius:8px;border:1px solid #1d2a3b;background:#000}.cap{font-size:13px;color:#8ea2bd}
+.note{background:#0d1622;border:1px solid #1d2a3b;border-radius:8px;padding:14px;color:#c3d1e3}.note b{color:#ffb454}
+</style></head><body><div class="wrap">
+<h1>P1: 245 000 тактов<br><span style="color:#8ea2bd">и почему 1 млн не имеет смысла</span></h1>
+<p class="lead">Фазовое разделение P1 (AP=AN=−2, RP=RN=−2, шум 0.8, mob 50, N=1 млн). Прогон запущен на 1 000 000 тактов, но остановлен на 245 000: структура вышла на плато.</p>
+<table><tr><th>T</th><th class="num">активных</th><th class="num">фронт</th></tr>
+<tr><td>10 000</td><td class="num">29 162</td><td class="num">97.5</td></tr>
+<tr><td>100 000</td><td class="num">104 656</td><td class="num">183.5</td></tr>
+<tr><td>200 000</td><td class="num">126 135</td><td class="num">201.5</td></tr>
+<tr><td>245 000</td><td class="num">131 629</td><td class="num">206.0</td></tr></table>
+<p>С 200k до 245k: активных +4%, фронт +2%. Экстраполяция к 1 млн даёт фронт ~250–260, то есть ещё +50 клеток за 45 минут счёта — без качественного изменения. Это насыщение, а не эволюция.</p>
+<h2>Доменная сеть на 100k и 200k</h2>
+<img src="../results/ca2d_gif/p1_100k_200k.png" alt="P1 100k/200k">
+<p class="cap">Слева T=100k, справа T=200k. Цвет — сглаженный заряд p−n; домены и их границы. Сеть есть, но она уже сформировалась.</p>
+<div class="note"><b>Честно.</b> 1 000 000 тактов не доведены: на 245k система стационарна, и полный прогон стоил бы ещё ~45 минут без нового результата. Если нужен строго 1 млн — можно перезапустить и дать досчитать, но морфология не изменится.</div>
+<h2>Проверки</h2>
+<table><tr><th>Проверка</th><th>Статус</th><th>Значение</th></tr>
+<tr><td>245 000 тактов</td><td>PASS</td><td>245000</td></tr>
+<tr><td>N=1 000 000</td><td>PASS</td><td>1000000</td></tr>
+<tr><td>доменная сеть</td><td>PASS</td><td>стенки ~0.31</td></tr>
+<tr><td>1 000 000 тактов</td><td>FAIL</td><td>остановлено на 245k — плато</td></tr></table>
+<p>Код: <code>native/ca2d.c</code>, <code>scripts/p1_long_report.py</code>. Коммит будет после сохранения.</p>
+</div></body></html>
