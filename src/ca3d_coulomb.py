@@ -18,8 +18,9 @@ def seed_neutral(L, N=16_000_000):
     p = np.zeros((L, L, L), np.int64)
     n = np.zeros_like(p)
     c = L // 2
-    p[c, c, c] = N // 2
-    n[c, c, c] = N - N // 2
+    P = int(round(N * charge_frac))
+    p[c, c, c] = P
+    n[c, c, c] = N - P
     return p, n
 
 
@@ -83,7 +84,7 @@ def seed_dipole(L, N=16_000_000, d=8):
     return p, n
 
 
-def poisson(rho: np.ndarray) -> np.ndarray:
+def poisson(rho: np.ndarray, mu: float = 0.0) -> np.ndarray:
     L = rho.shape[0]
     f = np.fft.rfftn(rho)
     kx = 2 * np.pi * np.fft.fftfreq(L)
@@ -91,6 +92,8 @@ def poisson(rho: np.ndarray) -> np.ndarray:
     kz = 2 * np.pi * np.fft.rfftfreq(L)
     K2 = kx[:, None, None] ** 2 + ky[None, :, None] ** 2 + kz[None, None, :] ** 2
     K2[0, 0, 0] = 1.0
+    if mu:
+        K2 = K2 + mu * mu
     phi = np.fft.irfftn(f / K2, s=(L, L, L))
     phi -= phi.mean()
     return phi.astype(np.float32)
@@ -111,22 +114,39 @@ def _split(a, w, K=None):
 
 
 def step(p, n, beta=1.0, K=None, exchange=False, gamma=0.0,
-         bias=0.0, rep=0.0, noise=0.0, rng=None):
+         bias=0.0, rep=0.0, noise=0.0, rng=None, bias_mode='x',
+         screening=0.0, anti=False):
+    L = p.shape[0]
     N = max(int(p.sum() + n.sum()), 1)
     rho = (p.astype(np.float32) - n.astype(np.float32)) / N
-    phi = poisson(rho)
+    phi = poisson(rho, screening)
+    if anti:
+        beta = -beta
     # веса: p — вниз по φ, n — вверх
     dens = (p + n).astype(np.float32) / N
     pdens = p.astype(np.float32) / N
     ndens = n.astype(np.float32) / N
     if rng is None:
         rng = np.random.default_rng(0)
+    if bias_mode == 'x':
+        B = [1.0, -1.0, 0.0, 0.0, 0.0, 0.0]
+    elif bias_mode == 'diag':
+        B = [1.0, -1.0, 1.0, -1.0, 1.0, -1.0]
+    elif bias_mode == 'radial':
+        xg, yg, zg = np.indices((L, L, L))
+        c0 = (L - 1) / 2
+        sx = np.sign(xg - c0); sy = np.sign(yg - c0); sz = np.sign(zg - c0)
+        B = [sx, -sx, sy, -sy, sz, -sz]
+    elif bias_mode == 'random':
+        B = [rng.integers(-1, 2, (L, L, L)).astype(np.float32) for _ in range(6)]
+    else:
+        B = [0.0] * 6
     wp = []
     wn = []
     for d in range(6):
         dphi = phi - np.roll(phi, DIRS[d], axis=(0, 1, 2))
         dd = dens - np.roll(dens, DIRS[d], axis=(0, 1, 2))
-        bd = 1.0 if d == 0 else (-1.0 if d == 1 else 0.0)
+        bd = B[d]
         rp = rng.integers(-1, 2, phi.shape) if noise > 0 else 0
         rn = rng.integers(-1, 2, phi.shape) if noise > 0 else 0
         wpp = np.clip(1.0 + beta * 6.0 * dphi + gamma * 6.0 * dd
@@ -172,18 +192,21 @@ def step(p, n, beta=1.0, K=None, exchange=False, gamma=0.0,
 
 
 def run_one(L=97, T=32, N=16_000_000, beta=1.0, K=None, exchange=False,
-            gamma=0.0, bias=0.0, rep=0.0, noise=0.0, seed_num=1):
+            gamma=0.0, bias=0.0, rep=0.0, noise=0.0, seed_num=1,
+            bias_mode='x', screening=0.0, anti=False, charge_frac=0.5):
     """Зародыш — ОДНА клетка: p=n=N/2. Всё остальное — эволюция правила."""
     p = np.zeros((L, L, L), np.int64)
     n = np.zeros_like(p)
     c = L // 2
-    p[c, c, c] = N // 2
-    n[c, c, c] = N - N // 2
+    P = int(round(N * charge_frac))
+    p[c, c, c] = P
+    n[c, c, c] = N - P
     rng = np.random.default_rng(seed_num)
     hist = [(0, int(p.sum()), int(n.sum()))]
     phi = np.zeros((L, L, L), np.float32)
     for _ in range(T):
-        p, n, phi = step(p, n, beta, K, exchange, gamma, bias, rep, noise, rng)
+        p, n, phi = step(p, n, beta, K, exchange, gamma, bias, rep, noise, rng,
+                         bias_mode, screening, anti)
         hist.append((len(hist), int(p.sum()), int(n.sum())))
     return p, n, phi, hist
 
@@ -212,3 +235,63 @@ def run(L=97, T=32, N=16_000_000, seed='neutral', beta=1.0, K=None,
 
 def density(a):
     return np.log10(1.0 + a.astype(np.float64)).astype(np.float32)
+
+
+# --------------------------------------------------------------------------
+#  Гелевое правило: оба сорта заряжены одинаково, короткое притяжение +
+#  дальнее кулоновское отталкивание. Кандидат на сеть из блобов.
+# --------------------------------------------------------------------------
+
+
+def step_gel(p, n, beta=0.5, self_att=1.0, gamma=0.5, noise=0.5, K=None, rng=None, cross_rep=0.0):
+    L = p.shape[0]
+    N = max(int(p.sum() + n.sum()), 1)
+    rho = (p.astype(np.float32) + n.astype(np.float32)) / N
+    phi = poisson(rho)
+    pd = p.astype(np.float32) / N
+    nd = n.astype(np.float32) / N
+    dens = pd + nd
+    if rng is None:
+        rng = np.random.default_rng(0)
+    wp, wn = [], []
+    for d in range(6):
+        dphi = phi - np.roll(phi, DIRS[d], axis=(0, 1, 2))
+        dd = dens - np.roll(dens, DIRS[d], axis=(0, 1, 2))
+        dp = pd - np.roll(pd, DIRS[d], axis=(0, 1, 2))
+        dn = nd - np.roll(nd, DIRS[d], axis=(0, 1, 2))
+        rp = rng.integers(-1, 2, phi.shape) if noise > 0 else 0
+        rn = rng.integers(-1, 2, phi.shape) if noise > 0 else 0
+        wp.append(np.clip(1.0 + beta * 6.0 * dphi + self_att * 6.0 * dp
+                          - cross_rep * 6.0 * dn
+                          + gamma * 6.0 * dd + noise * rp, 0.0, None))
+        wn.append(np.clip(1.0 + beta * 6.0 * dphi + self_att * 6.0 * dn
+                          - cross_rep * 6.0 * dp
+                          + gamma * 6.0 * dd + noise * rn, 0.0, None))
+    wp.append(np.ones_like(phi)); wn.append(np.ones_like(phi))
+    wp = [np.maximum(1, np.rint(w * 100)).astype(np.int64) for w in wp]
+    wn = [np.maximum(1, np.rint(w * 100)).astype(np.int64) for w in wn]
+    sp, sn = sum(wp), sum(wn)
+    shp = [(p * wp[d]) // sp for d in range(6)]
+    shn = [(n * wn[d]) // sn for d in range(6)]
+    if K is not None:
+        shp = [np.minimum(s, K) for s in shp]
+        shn = [np.minimum(s, K) for s in shn]
+    p2 = p - sum(shp); n2 = n - sum(shn)
+    for d in range(6):
+        p2 = p2 + np.roll(shp[d], DIRS[d], axis=(0, 1, 2))
+        n2 = n2 + np.roll(shn[d], DIRS[d], axis=(0, 1, 2))
+    return p2, n2
+
+
+def run_gel(L=65, T=20, N=16_000_000, beta=0.5, self_att=1.0, gamma=0.5,
+            noise=0.5, K=None, charge_frac=0.5, seed_num=1, cross_rep=0.0):
+    p = np.zeros((L, L, L), np.int64)
+    n = np.zeros_like(p)
+    c = L // 2
+    P = int(round(N * charge_frac))
+    p[c, c, c] = P
+    n[c, c, c] = N - P
+    rng = np.random.default_rng(seed_num)
+    for _ in range(T):
+        p, n = step_gel(p, n, beta, self_att, gamma, noise, K, rng, cross_rep)
+    return p, n
