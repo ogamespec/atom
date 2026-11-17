@@ -1,0 +1,11 @@
+start T=10000 N=1000000 frac=0.500 mode=0 attr=-2.00 rep=2.00 bias=0.00 noise=0.50 mob=50
+cp t=2500 active=68045 bits=1000000 front=26.02
+cp t=5000 active=75044 bits=1000000 front=26.78
+cp t=7500 active=77686 bits=1000000 front=27.22
+cp t=10000 active=79154 bits=1000000 front=27.33
+final t=10000 active=79154 bits=1000000 front=27.33
+wrote /mnt/c/Work/atom/results/ca3d5_sweep/state_E4.bin count=79154
+elapsed 10 s
+elapsed 25 s
+elapsed 42 s
+elapsed 58 s

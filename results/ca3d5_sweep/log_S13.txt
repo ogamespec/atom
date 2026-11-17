@@ -1,0 +1,11 @@
+start T=10000 N=1000000 frac=0.500 mode=0 attr=0.00 rep=0.00 bias=0.50 noise=0.80 mob=5
+cp t=2500 active=18426 bits=1000000 front=38.03
+cp t=5000 active=25598 bits=1000000 front=55.02
+cp t=7500 active=26826 bits=1000000 front=59.02
+cp t=10000 active=27583 bits=1000000 front=61.02
+final t=10000 active=27583 bits=1000000 front=61.02
+wrote /mnt/c/Work/atom/results/ca3d5_sweep/state_S13.bin count=27583
+elapsed 1 s
+elapsed 5 s
+elapsed 9 s
+elapsed 13 s

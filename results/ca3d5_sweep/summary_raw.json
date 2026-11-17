@@ -1,0 +1,212 @@
+[
+ {
+  "tag": "S09",
+  "start": "start T=10000 N=1000000 frac=0.800 mode=1 attr=2.00 rep=2.00 bias=0.50 noise=0.30 mob=50",
+  "final": "final t=10000 active=206970 bits=1000000 front=225.18",
+  "front10": 225.18,
+  "active10": 206970,
+  "front5": 223.44,
+  "active5": 205620,
+  "ratio": 1.01
+ },
+ {
+  "tag": "S08",
+  "start": "start T=10000 N=1000000 frac=0.500 mode=1 attr=0.00 rep=0.50 bias=0.50 noise=0.00 mob=50",
+  "final": "final t=10000 active=173907 bits=1000000 front=168.01",
+  "front10": 168.01,
+  "active10": 173907,
+  "front5": 168.01,
+  "active5": 173907,
+  "ratio": 1.0
+ },
+ {
+  "tag": "S06",
+  "start": "start T=10000 N=1000000 frac=0.800 mode=1 attr=0.00 rep=2.00 bias=0.50 noise=0.80 mob=20",
+  "final": "final t=10000 active=95554 bits=1000000 front=142.62",
+  "front10": 142.62,
+  "active10": 95554,
+  "front5": 142.05,
+  "active5": 95387,
+  "ratio": 1.0
+ },
+ {
+  "tag": "S11",
+  "start": "start T=10000 N=1000000 frac=0.800 mode=0 attr=2.00 rep=1.00 bias=0.50 noise=0.00 mob=20",
+  "final": "final t=10000 active=60643 bits=1000000 front=107.02",
+  "front10": 107.02,
+  "active10": 60643,
+  "front5": 107.02,
+  "active5": 60643,
+  "ratio": 1.0
+ },
+ {
+  "tag": "S00",
+  "start": "start T=10000 N=1000000 frac=0.800 mode=1 attr=1.00 rep=1.00 bias=0.20 noise=0.50 mob=20",
+  "final": "final t=10000 active=78710 bits=1000000 front=103.93",
+  "front10": 103.93,
+  "active10": 78710,
+  "front5": 101.06,
+  "active5": 76644,
+  "ratio": 1.03
+ },
+ {
+  "tag": "S03",
+  "start": "start T=10000 N=1000000 frac=0.800 mode=1 attr=2.00 rep=0.50 bias=0.20 noise=0.50 mob=20",
+  "final": "final t=10000 active=78696 bits=1000000 front=103.93",
+  "front10": 103.93,
+  "active10": 78696,
+  "front5": 101.06,
+  "active5": 76660,
+  "ratio": 1.03
+ },
+ {
+  "tag": "S02",
+  "start": "start T=10000 N=1000000 frac=0.800 mode=1 attr=0.50 rep=2.00 bias=0.20 noise=0.50 mob=20",
+  "final": "final t=10000 active=78688 bits=1000000 front=103.93",
+  "front10": 103.93,
+  "active10": 78688,
+  "front5": 101.06,
+  "active5": 76639,
+  "ratio": 1.03
+ },
+ {
+  "tag": "S07",
+  "start": "start T=10000 N=1000000 frac=0.500 mode=0 attr=0.00 rep=1.00 bias=0.20 noise=0.30 mob=50",
+  "final": "final t=10000 active=157621 bits=1000000 front=100.05",
+  "front10": 100.05,
+  "active10": 157621,
+  "front5": 98.05,
+  "active5": 153523,
+  "ratio": 1.02
+ },
+ {
+  "tag": "S10",
+  "start": "start T=10000 N=1000000 frac=0.800 mode=0 attr=0.00 rep=0.50 bias=0.20 noise=0.80 mob=20",
+  "final": "final t=10000 active=101995 bits=1000000 front=94.05",
+  "front10": 94.05,
+  "active10": 101995,
+  "front5": 85.06,
+  "active5": 93146,
+  "ratio": 1.11
+ },
+ {
+  "tag": "S05",
+  "start": "start T=10000 N=1000000 frac=0.500 mode=0 attr=0.50 rep=0.00 bias=0.20 noise=0.80 mob=20",
+  "final": "final t=10000 active=102866 bits=1000000 front=78.08",
+  "front10": 78.08,
+  "active10": 102866,
+  "front5": 71.07,
+  "active5": 94155,
+  "ratio": 1.1
+ },
+ {
+  "tag": "S04",
+  "start": "start T=10000 N=1000000 frac=0.800 mode=0 attr=0.00 rep=2.00 bias=0.20 noise=0.30 mob=20",
+  "final": "final t=10000 active=60086 bits=1000000 front=78.03",
+  "front10": 78.03,
+  "active10": 60086,
+  "front5": 77.03,
+  "active5": 59546,
+  "ratio": 1.01
+ },
+ {
+  "tag": "S13",
+  "start": "start T=10000 N=1000000 frac=0.500 mode=0 attr=0.00 rep=0.00 bias=0.50 noise=0.80 mob=5",
+  "final": "final t=10000 active=27583 bits=1000000 front=61.02",
+  "front10": 61.02,
+  "active10": 27583,
+  "front5": 55.02,
+  "active5": 25598,
+  "ratio": 1.11
+ },
+ {
+  "tag": "S14",
+  "start": "start T=10000 N=1000000 frac=0.800 mode=0 attr=0.00 rep=2.00 bias=0.50 noise=0.00 mob=5",
+  "final": "final t=10000 active=14836 bits=1000000 front=56.02",
+  "front10": 56.02,
+  "active10": 14836,
+  "front5": 56.02,
+  "active5": 14836,
+  "ratio": 1.0
+ },
+ {
+  "tag": "S15",
+  "start": "start T=10000 N=1000000 frac=0.500 mode=1 attr=2.00 rep=0.00 bias=0.20 noise=0.00 mob=5",
+  "final": "final t=10000 active=11107 bits=1000000 front=31.83",
+  "front10": 31.83,
+  "active10": 11107,
+  "front5": 31.83,
+  "active5": 11107,
+  "ratio": 1.0
+ },
+ {
+  "tag": "E1",
+  "start": "start T=10000 N=1000000 frac=0.500 mode=0 attr=0.00 rep=5.00 bias=0.00 noise=0.00 mob=100",
+  "final": "final t=10000 active=120713 bits=1000000 front=30.87",
+  "front10": 30.87,
+  "active10": 120713,
+  "front5": 30.87,
+  "active5": 120713,
+  "ratio": 1.0
+ },
+ {
+  "tag": "N2",
+  "start": "start T=10000 N=1000000 frac=0.800 mode=1 AP=2.00 RP=0.00 AN=-1.00 RN=1.00 bias=0.00 noise=0.30 mob=50",
+  "final": "final t=10000 active=96987 bits=1000000 front=29.22",
+  "front10": 29.22,
+  "active10": 96987,
+  "front5": 28.79,
+  "active5": 93264,
+  "ratio": 1.01
+ },
+ {
+  "tag": "N1",
+  "start": "start T=10000 N=1000000 frac=0.800 mode=1 AP=2.00 RP=0.00 AN=-2.00 RN=0.00 bias=0.00 noise=0.30 mob=50",
+  "final": "final t=10000 active=96953 bits=1000000 front=29.22",
+  "front10": 29.22,
+  "active10": 96953,
+  "front5": 28.79,
+  "active5": 93192,
+  "ratio": 1.01
+ },
+ {
+  "tag": "E4",
+  "start": "start T=10000 N=1000000 frac=0.500 mode=0 attr=-2.00 rep=2.00 bias=0.00 noise=0.50 mob=50",
+  "final": "final t=10000 active=79154 bits=1000000 front=27.33",
+  "front10": 27.33,
+  "active10": 79154,
+  "front5": 26.78,
+  "active5": 75044,
+  "ratio": 1.02
+ },
+ {
+  "tag": "E3",
+  "start": "start T=10000 N=1000000 frac=0.500 mode=0 attr=-2.00 rep=-2.00 bias=0.00 noise=0.50 mob=50",
+  "final": "final t=10000 active=78861 bits=1000000 front=27.33",
+  "front10": 27.33,
+  "active10": 78861,
+  "front5": 26.78,
+  "active5": 74272,
+  "ratio": 1.02
+ },
+ {
+  "tag": "S12",
+  "start": "start T=10000 N=1000000 frac=0.800 mode=1 attr=2.00 rep=2.00 bias=0.00 noise=0.80 mob=20",
+  "final": "final t=10000 active=63786 bits=1000000 front=25.40",
+  "front10": 25.4,
+  "active10": 63786,
+  "front5": 24.19,
+  "active5": 54682,
+  "ratio": 1.05
+ },
+ {
+  "tag": "S01",
+  "start": "start T=10000 N=1000000 frac=0.500 mode=0 attr=0.00 rep=0.00 bias=0.00 noise=0.50 mob=20",
+  "final": "final t=10000 active=30422 bits=1000000 front=20.02",
+  "front10": 20.02,
+  "active10": 30422,
+  "front5": 19.42,
+  "active5": 28522,
+  "ratio": 1.03
+ }
+]

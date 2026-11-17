@@ -1,0 +1,7 @@
+start T=10000 N=1000000 frac=0.500 mode=1 attr=0.00 rep=5.00 bias=0.00 noise=0.00 mob=100
+cp t=2500 active=120713 bits=1000000 front=30.87
+cp t=5000 active=120713 bits=1000000 front=30.87
+cp t=7500 active=120713 bits=1000000 front=30.87
+elapsed 21 s
+elapsed 44 s
+elapsed 68 s
