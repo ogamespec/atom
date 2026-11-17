@@ -1,0 +1,37 @@
+<!DOCTYPE html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>P1 с пульсацией пространства</title><style>
+body{margin:0;background:#070a10;color:#dce6f4;font:16px/1.65 Inter,Arial,sans-serif}.wrap{max-width:1000px;margin:0 auto;padding:30px 24px 70px}
+h1{font-size:38px;line-height:1.1}h2{font-size:24px;margin-top:34px}.lead{color:#b9c7da;font-size:18px}
+code{font-family:monospace;color:#ffd9a3;background:#101a27;padding:2px 5px;border-radius:4px}
+table{border-collapse:collapse;width:100%;font-size:14px;margin:14px 0}th,td{padding:8px 10px;border-bottom:1px solid #1d2a3b;text-align:left}
+th{color:#9fb3cc;font-size:12px;text-transform:uppercase}.num{text-align:right;font-family:monospace}
+img{width:100%;border-radius:8px;border:1px solid #1d2a3b;background:#000}.cap{font-size:13px;color:#8ea2bd}
+.note{background:#0d1622;border:1px solid #1d2a3b;border-radius:8px;padding:14px;color:#c3d1e3}.note b{color:#ffb454}
+</style></head><body><div class="wrap">
+<h1>P1: пульсирующее пространство<br><span style="color:#8ea2bd">расширение до максимума и сжатие в точку</span></h1>
+<p class="lead">Тот же 2D-автомат P1 (фазовое разделение, N=1 млн), но пространство пульсирует: масштабный фактор <code>a(t)=4·sin(πt/T)</code>. В начале a=0 — точка; к середине a=4 — максимум; к T=20 000 — снова точка. CA считается в сопутствующих координатах, биты сохраняются: 1 000 000 на всех кадрах.</p>
+<h2>GIF</h2>
+<img src="../results/ca2d_gif/p1_pulse.gif" alt="Пульсация пространства">
+<p class="cap">Круг — граница пространства (радиус ∝ a); цвет — сглаженный заряд p−n. Структура расширяется вместе с пространством, затем сжимается в точку.</p>
+<h2>Ключевые кадры</h2>
+<img src="../results/ca2d_gif/p1_pulse_montage.png" alt="Кадры пульсации">
+<p class="cap">Слева направо, сверху вниз: a≈0.6, 1.9, 4.0 (максимум), 2.4, 0.6, 0.0.</p>
+<h2>Параметры</h2>
+<table><tr><th>Параметр</th><th>Значение</th></tr>
+<tr><td>T</td><td class="num">20 000</td></tr>
+<tr><td>N бит</td><td class="num">1 000 000</td></tr>
+<tr><td>a(t)</td><td>4·sin(πt/T)</td></tr>
+<tr><td>a max</td><td class="num">4.0</td></tr>
+<tr><td>a в конце</td><td class="num">0.0</td></tr>
+<tr><td>активных клеток (comoving)</td><td class="num">47 776</td></tr>
+<tr><td>фронт (comoving)</td><td class="num">124.4</td></tr></table>
+<div class="note"><b>Честно о модели.</b> Это <b>кинематическая</b> пульсация: пространство масштабируется, а CA эволюционирует в сопутствующих координатах; в конце все биты геометрически стягиваются в точку. Клетки при сжатии не сливаются и не перераспределяются. Если нужна динамическая контракция (слияние клеток, рост плотности, обратное расширение с разбиением), это отдельная модель — скажите, сделаю.</div>
+<h2>Проверки</h2>
+<table><tr><th>Проверка</th><th>Статус</th><th>Значение</th></tr>
+<tr><td>T=20 000</td><td>PASS</td><td>20000</td></tr>
+<tr><td>N=1 000 000</td><td>PASS</td><td>1000000</td></tr>
+<tr><td>a max=4</td><td>PASS</td><td>4.0</td></tr>
+<tr><td>a конец=0</td><td>PASS</td><td>0.0</td></tr>
+<tr><td>GIF и монтаж</td><td>PASS</td><td>2 файла</td></tr></table>
+<p>Код: <code>native/ca2d.c</code> (кадры), <code>scripts/make_pulse_gif.py</code>. P1-отчёт: <a href="ca2d.html">ca2d.html</a>.</p>
+</div></body></html>
